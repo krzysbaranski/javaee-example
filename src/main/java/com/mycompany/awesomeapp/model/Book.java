@@ -9,6 +9,10 @@ import javax.persistence.GenerationType;
 import javax.persistence.Column;
 import javax.persistence.Version;
 import javax.xml.bind.annotation.XmlRootElement;
+import com.mycompany.awesomeapp.model.Author;
+import java.util.Set;
+import java.util.HashSet;
+import javax.persistence.ManyToMany;
 
 @Entity
 @Table(name = "book")
@@ -28,6 +32,9 @@ public class Book implements Serializable {
 
 	@Column
 	private Integer year;
+
+	@ManyToMany
+	private Set<Author> author = new HashSet<Author>();
 
 	public Long getId() {
 		return this.id;
@@ -94,5 +101,13 @@ public class Book implements Serializable {
 		if (year != null)
 			result += ", year: " + year;
 		return result;
+	}
+
+	public Set<Author> getAuthor() {
+		return this.author;
+	}
+
+	public void setAuthor(final Set<Author> author) {
+		this.author = author;
 	}
 }
