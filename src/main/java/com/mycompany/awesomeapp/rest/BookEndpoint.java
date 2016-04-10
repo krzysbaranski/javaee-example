@@ -57,7 +57,7 @@ public class BookEndpoint {
 	public Response findById(@PathParam("id") Long id) {
 		TypedQuery<Book> findByIdQuery = em
 				.createQuery(
-						"SELECT DISTINCT b FROM Book b WHERE b.id = :entityId ORDER BY b.id",
+						"SELECT DISTINCT b FROM Book b LEFT JOIN FETCH b.author WHERE b.id = :entityId ORDER BY b.id",
 						Book.class);
 		findByIdQuery.setParameter("entityId", id);
 		Book entity;
@@ -76,8 +76,10 @@ public class BookEndpoint {
 	@Produces("application/json")
 	public List<Book> listAll(@QueryParam("start") Integer startPosition,
 			@QueryParam("max") Integer maxResult) {
-		TypedQuery<Book> findAllQuery = em.createQuery(
-				"SELECT DISTINCT b FROM Book b ORDER BY b.id", Book.class);
+		TypedQuery<Book> findAllQuery = em
+				.createQuery(
+						"SELECT DISTINCT b FROM Book b LEFT JOIN FETCH b.author ORDER BY b.id",
+						Book.class);
 		if (startPosition != null) {
 			findAllQuery.setFirstResult(startPosition);
 		}
