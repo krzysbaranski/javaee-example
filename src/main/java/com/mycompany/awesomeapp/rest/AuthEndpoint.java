@@ -1,42 +1,56 @@
 package com.mycompany.awesomeapp.rest;
 
-import javax.ws.rs.Path;
+import com.mycompany.awesomeapp.rest.security.JsonWebTokenGenerator;
+
+import javax.ws.rs.*;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.GET;
-import javax.ws.rs.Produces;
-import javax.ws.rs.POST;
 import javax.ws.rs.core.UriBuilder;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.PUT;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.PathParam;
 
 @Path("/auth")
 public class AuthEndpoint {
 
-	@GET
-	@Produces("text/plain")
-	public Response doGet() {
-		return Response.ok("method doGet invoked").build();
-	}
+    @GET
+    @Produces("text/plain")
+    public Response doGet() {
 
-	@POST
-	@Consumes({"text/plain", "application/json"})
-	public Response doPost(String entity) {
-		return Response.created(
-				UriBuilder.fromResource(AuthEndpoint.class).build()).build();
-	}
+        try {
+            String jsonWebToken = JsonWebTokenGenerator.INSTANCE.newToken("krzys");
+            return Response.ok("method doGet invoked " + jsonWebToken).build();
+        } catch (Exception e) {
+            return Response.status(500).build();
+        }
+    }
 
-	@PUT
-	@Consumes({"text/plain", "application/json"})
-	public Response doPut(String entity) {
-		return Response.created(
-				UriBuilder.fromResource(AuthEndpoint.class).build()).build();
-	}
+    @POST
+    @Consumes({"text/plain", "application/json"})
+    public Response doPost(String entity) {
+        Response response = Response.created(
+                UriBuilder.fromResource(AuthEndpoint.class).build()).build();
+        return response;
+    }
 
-	@DELETE
-	@Path("/{id}")
-	public Response doDelete(@PathParam("id") Long id) {
-		return Response.noContent().build();
-	}
+    @PUT
+    @Consumes({"text/plain", "application/json"})
+    public Response doPut(
+            @Context HttpHeaders httpHeaders,
+            String entity) {
+        String auth = httpHeaders.getRequestHeader("Authorization").iterator().next();
+
+        try {
+            String decoded = JsonWebTokenGenerator.INSTANCE.verifyJsonWebToken(auth);
+            return Response.ok("method doPut invoked " + decoded).build();
+        } catch (Exception e) {
+            return Response.serverError().build();
+        }
+//		return Response.created(
+//				UriBuilder.fromResource(AuthEndpoint.class).build()).build();
+    }
+
+    @DELETE
+    @Path("/{id}")
+    public Response doDelete(@PathParam("id") Long id) {
+        return Response.noContent().build();
+    }
 }
