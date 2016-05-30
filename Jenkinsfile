@@ -32,4 +32,10 @@ node {
 
    stage 'Test deploy'
    sh "curl  --fail -v http://localhost:8080/AwesomeApp/rest/books"
+
+   // https://hub.docker.com/_/postgres/
+   // stage 'docker postgres'
+   // sh "docker run --name my-postgres -e POSTGRES_PASSWORD=mysecretpassword -d postgres"
+   // stage 'docker app'
+   // sh "docker run --name some-app --link some-postgres:postgres -d application-that-uses-postgres"
 }
