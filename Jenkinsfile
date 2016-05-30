@@ -24,6 +24,9 @@ node {
    stage 'Package'
    sh "${mvnHome}/bin/mvn package"
 
-   stage 'Deploy (publish artefact)'
-   sh "${mvnHome}/bin/mvn deploy"
+   // stage 'Deploy (publish artefact)'
+   // sh "${mvnHome}/bin/mvn deploy"
+
+   stage 'Server deploy'
+   sh "/opt/wildfly-10.0.0.Final/bin/jboss-cli.sh --controller=\"localhost:9990\" -c command=\"deploy target/AwesomeApp.war\""
 }
