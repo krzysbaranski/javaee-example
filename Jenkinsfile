@@ -17,4 +17,13 @@ node {
 
    stage 'Tests'
    sh "${mvnHome}/bin/mvn test"
+
+   input message: "Does everything really look good?"
+   stage 'Human Approval'
+
+   stage 'Package'
+   sh "${mvnHome}/bin/mvn package"
+
+   stage 'Deploy (publish artefact)'
+   sh "${mvnHome}/bin/mvn deploy"
 }
