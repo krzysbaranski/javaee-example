@@ -36,6 +36,8 @@ node {
    // https://hub.docker.com/_/postgres/
    // stage 'docker postgres'
    // sh "docker run --name my-postgres -e POSTGRES_PASSWORD=mysecretpassword -d postgres"
+   // stage 'initdb'
+   // sh "docker run -it --rm --link some-postgres:postgres postgres psql -h postgres -U postgres"
    // stage 'docker app'
    // sh "docker run --name some-app --link some-postgres:postgres -d application-that-uses-postgres"
 }
