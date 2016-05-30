@@ -28,5 +28,8 @@ node {
    // sh "${mvnHome}/bin/mvn deploy"
 
    stage 'Server deploy'
-   sh "/opt/wildfly-10.0.0.Final/bin/jboss-cli.sh --controller=\"localhost:9990\" -c command=\"deploy target/AwesomeApp.war\""
+   sh "/opt/wildfly-10.0.0.Final/bin/jboss-cli.sh --controller=\"localhost:9990\" -c command=\"deploy target/AwesomeApp.war --force\""
+
+   stage 'Test deploy'
+   sh "curl  --fail -v http://localhost:8080/AwesomeApp/rest/books"
 }
