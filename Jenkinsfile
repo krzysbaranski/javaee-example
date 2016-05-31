@@ -4,6 +4,9 @@ node {
 
    // Checkout code from repository
    checkout scm
+   echo "branch is: ${env.BRANCH_NAME}"
+   def feature = feature(env.BRANCH_NAME)
+   echo "Building flavor ${feature}"
 
    // Get the maven tool.
    // ** NOTE: This 'M3' maven tool must be configured
@@ -40,4 +43,12 @@ node {
    // sh "docker run -it --rm --link some-postgres:postgres postgres psql -h postgres -U postgres"
    // stage 'docker app'
    // sh "docker run --name some-app --link some-postgres:postgres -d application-that-uses-postgres"
+
+
+@NonCPS
+def feature(branchName) {
+  def matcher = (env.BRANCH_NAME =~ /feature-([a-z_]+)/)
+  assert matcher.matches()
+  matcher[0][1]
+}
 }
