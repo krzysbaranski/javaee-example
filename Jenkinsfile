@@ -1,3 +1,8 @@
+def feature(branchName) {
+  def matcher = (env.BRANCH_NAME =~ /feature-([a-z_]+)/)
+  assert matcher.matches()
+  matcher[0][1]
+}
 node {
    // Mark the code checkout 'stage'....
    stage 'Checkout'
@@ -44,10 +49,4 @@ node {
    // stage 'docker app'
    // sh "docker run --name some-app --link some-postgres:postgres -d application-that-uses-postgres"
 
-
-def feature(branchName) {
-  def matcher = (env.BRANCH_NAME =~ /feature-([a-z_]+)/)
-  assert matcher.matches()
-  matcher[0][1]
-}
 }
