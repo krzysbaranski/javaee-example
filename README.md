@@ -1,5 +1,7 @@
 **Java EE App**
 
+[![Build Status](https://travis-ci.org/krzysbaranski/javaee-example.svg?branch=master)](https://travis-ci.org/krzysbaranski/javaee-example)
+
 To build app run:
 ```bash
 mvn install
