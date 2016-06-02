@@ -298,7 +298,7 @@
       <groupId>org.jboss.resteasy</groupId>
       <artifactId>jose-jwt</artifactId>
       <version>3.0.14.Final</version>
-      <scope>provided</scope>
+      <scope>compile</scope>
     </dependency>
   </dependencies>
 </project>

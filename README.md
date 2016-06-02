@@ -102,7 +102,7 @@ curl -vv -H "Content-Type: application/json" -X POST -d '{"title":"Firstborn","y
   <http://localhost:8080/AwesomeApp/rest/books>
 
 * GET book with id=1:
-  <http://localhost:8080/AwesomeApp/rest/boooks/1>
+  <http://localhost:8080/AwesomeApp/rest/books/1>
 
 * GET all authors:
   <http://localhost:8080/AwesomeApp/rest/authors>
