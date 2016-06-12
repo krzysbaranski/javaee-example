@@ -1,3 +1,4 @@
+@NonCPS
 def feature(branchName) {
   def matcher = (env.BRANCH_NAME =~ /feature-([a-z_]+)/)
   assert matcher.matches()
