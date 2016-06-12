@@ -1,8 +1,12 @@
 @NonCPS
 def feature(branchName) {
-  def matcher = (env.BRANCH_NAME =~ /feature-([a-z_]+)/)
-  assert matcher.matches()
-  matcher[0][1]
+   def matcher = (branchName =~ /feature-([a-z_]+)/)
+   if (matcher.matches()) {
+      assert matcher.matches()
+      //return matcher[0][1]
+      return true
+   }
+   return false
 }
 node {
    // Mark the code checkout 'stage'....
@@ -11,8 +15,6 @@ node {
    // Checkout code from repository
    checkout scm
    echo "branch is: ${env.BRANCH_NAME}"
-   def feature = feature(env.BRANCH_NAME)
-   echo "Building flavor ${feature}"
 
    // Get the maven tool.
    // ** NOTE: This 'M3' maven tool must be configured
@@ -27,11 +29,17 @@ node {
    stage 'Tests'
    sh "${mvnHome}/bin/mvn test"
 
-   input message: "Does everything really look good?"
-   stage 'Human Approval'
 
-   stage 'Package'
-   sh "${mvnHome}/bin/mvn package"
+
+   if (!feature(env.BRANCH_NAME)) {
+      input message: "Does everything really look good?"
+      stage 'Human Approval'
+   }
+
+   if (!feature(env.BRANCH_NAME)) {
+      stage 'Package'
+      sh "${mvnHome}/bin/mvn package"
+   }
 
    // stage 'Deploy (publish artefact)'
    // sh "${mvnHome}/bin/mvn deploy"
