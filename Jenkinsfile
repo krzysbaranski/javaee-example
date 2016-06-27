@@ -29,7 +29,11 @@ node {
    stage 'Tests'
    sh "${mvnHome}/bin/mvn test"
 
-
+   try {
+      checkpoint 'Completed tests'
+   } catch (NoSuchMethodError _) {
+      echo 'Checkpoint feature available in Jenkins Enterprise'
+      }
 
    if (!feature(env.BRANCH_NAME)) {
       input message: "Does everything really look good?"
@@ -40,6 +44,14 @@ node {
       stage 'Package'
       sh "${mvnHome}/bin/mvn package"
    }
+
+   def maven = docker.image('maven:latest')
+   maven.pull() // make sure we have the latest available from Docker Hub
+   maven.inside {
+      // …as above
+   }
+
+   step([$class: 'ArtifactArchiver', artifacts: '**/target/*.war’, fingerprint: true])
 
    // stage 'Deploy (publish artefact)'
    // sh "${mvnHome}/bin/mvn deploy"
