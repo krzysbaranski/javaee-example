@@ -51,7 +51,7 @@ node {
       // …as above
    }
 
-   def jboss = docker.image('krzysbaranski/wildfly:7.1.1)
+   def jboss = docker.image('krzysbaranski/wildfly:7.1.1')
    jboss.pull()
    jboss.inside() {
      sh 'find /'
@@ -68,8 +68,8 @@ node {
    sh "curl  --fail -v http://localhost:8080/AwesomeApp/rest/books"
 
    // https://hub.docker.com/_/postgres/
-   // stage 'docker postgres'
-   // sh "docker run --name my-postgres -e POSTGRES_PASSWORD=mysecretpassword -d postgres"
+   stage 'docker postgres'
+   sh "docker run --name my-postgres -e POSTGRES_PASSWORD=mysecretpassword -d postgres"
    // stage 'initdb'
    // sh "docker run -it --rm --link some-postgres:postgres postgres psql -h postgres -U postgres"
    // stage 'docker app'
