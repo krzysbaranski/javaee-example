@@ -51,8 +51,6 @@ node {
       // …as above
    }
 
-   step([$class: 'ArtifactArchiver', artifacts: '**/target/*.war’, fingerprint: true])
-
    // stage 'Deploy (publish artefact)'
    // sh "${mvnHome}/bin/mvn deploy"
 
