@@ -51,6 +51,13 @@ node {
       // …as above
    }
 
+   def jboss = docker.image('krzysbaranski/wildfly:7.1.1)
+   jboss.pull()
+   jboss.inside() {
+     sh 'find /'
+   }
+
+
    // stage 'Deploy (publish artefact)'
    // sh "${mvnHome}/bin/mvn deploy"
 
