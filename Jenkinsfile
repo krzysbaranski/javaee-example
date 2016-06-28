@@ -54,7 +54,7 @@ node {
    def jboss = docker.image('krzysbaranski/wildfly:7.1.1')
    jboss.pull()
    jboss.inside() {
-     sh 'find /'
+     sh 'find /opt/jboss/'
    }
 
 
