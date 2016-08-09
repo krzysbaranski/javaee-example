@@ -36,7 +36,7 @@ node {
       checkpoint 'Completed tests'
    } catch (NoSuchMethodError _) {
       echo 'Checkpoint feature available in Jenkins Enterprise'
-      }
+   }
 
    if (!feature(env.BRANCH_NAME)) {
       input message: "Does everything really look good?"
@@ -44,7 +44,7 @@ node {
    }
 
    stage 'Package'
-   sh "${mvnHome}/bin/mvn -B package"
+   sh "${mvnHome}/bin/mvn -B -DskipTests=true package"
    step([$class: 'ArtifactArchiver', artifacts: '**/target/*.jar', fingerprint: true])
 
    if (!feature(env.BRANCH_NAME)) {
