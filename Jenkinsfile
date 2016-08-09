@@ -8,6 +8,12 @@ def feature(branchName) {
    }
    return false
 }
+
+def version() {
+   def matcher = readFile('pom.xml') =~ '<version>(.+)</version>'
+   matcher ? matcher[0][1] : null
+}
+
 node {
    // Mark the code checkout 'stage'....
    stage 'Checkout'
@@ -23,6 +29,10 @@ node {
 
    // Mark the code build 'stage'....
    stage 'Build'
+   def v = version()
+   if (v) {
+      echo "Building version ${v}"
+   }
    // Run the maven build
    sh "${mvnHome}/bin/mvn -B -DskipTests=true clean compile"
 
@@ -39,8 +49,8 @@ node {
    }
 
    if (!feature(env.BRANCH_NAME)) {
-      input message: "Does everything really look good?"
       stage 'Human Approval'
+      input message: "Does everything really look good?"
    }
 
    stage 'Package'
