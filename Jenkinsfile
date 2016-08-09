@@ -27,7 +27,9 @@ node {
    sh "${mvnHome}/bin/mvn clean install"
 
    stage 'Tests'
-   sh "${mvnHome}/bin/mvn test"
+   sh "${mvnHome}/bin/mvn -B -Dmaven.test.failure.ignore test"
+
+   step([$class: 'JUnitResultArchiver', testResults: '**/target/surefire-reports/TEST-*.xml'])
 
    try {
       checkpoint 'Completed tests'
@@ -40,9 +42,13 @@ node {
       stage 'Human Approval'
    }
 
+   stage 'Package'
+   sh "${mvnHome}/bin/mvn -B package"
+   step([$class: 'ArtifactArchiver', artifacts: '**/target/*.jar', fingerprint: true])
+
    if (!feature(env.BRANCH_NAME)) {
-      stage 'Package'
-      sh "${mvnHome}/bin/mvn package"
+     stage 'Deploy'
+     sh "${mvnHome}/bin/mvn -B deploy"
    }
 
    def maven = docker.image('maven:latest')
