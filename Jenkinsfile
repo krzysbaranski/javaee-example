@@ -24,7 +24,7 @@ node {
    // Mark the code build 'stage'....
    stage 'Build'
    // Run the maven build
-   sh "${mvnHome}/bin/mvn -B clean install"
+   sh "${mvnHome}/bin/mvn -B -DskipTests=true clean compile"
 
    stage 'Tests'
    sh "${mvnHome}/bin/mvn -B -Dmaven.test.failure.ignore=true verify"
