@@ -45,7 +45,7 @@ node {
 
    stage 'Package'
    sh "${mvnHome}/bin/mvn -B -DskipTests=true package"
-   step([$class: 'ArtifactArchiver', artifacts: '**/target/*.jar', fingerprint: true])
+   step([$class: 'ArtifactArchiver', artifacts: '**/target/*.war', fingerprint: true])
 
 //   if (!feature(env.BRANCH_NAME)) {
 //     stage 'Deploy'
