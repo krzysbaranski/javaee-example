@@ -37,11 +37,12 @@ node {
    sh "${mvnHome}/bin/mvn -B -DskipTests=true clean compile"
 
    stage 'Tests'
-   sh "${mvnHome}/bin/mvn -B -Dmaven.test.failure.ignore=true verify"
-
-   stage 'Archive test results'
-   step([$class: 'JUnitResultArchiver', testResults: '**/target/surefire-reports/TEST-*.xml'])
-
+   try {
+      sh "${mvnHome}/bin/mvn -B -Dmaven.test.failure.ignore=true verify"
+   } finally {
+      stage 'Archive test results'
+      step([$class: 'JUnitResultArchiver', testResults: '**/target/surefire-reports/TEST-*.xml'])
+   }
    try {
       checkpoint 'Completed tests'
    } catch (NoSuchMethodError _) {
