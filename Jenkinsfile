@@ -24,11 +24,12 @@ node {
    // Mark the code build 'stage'....
    stage 'Build'
    // Run the maven build
-   sh "${mvnHome}/bin/mvn clean install"
+   sh "${mvnHome}/bin/mvn -B clean install"
 
    stage 'Tests'
-   sh "${mvnHome}/bin/mvn -B -Dmaven.test.failure.ignore test"
+   sh "${mvnHome}/bin/mvn -B -Dmaven.test.failure.ignore=true verify"
 
+   stage 'Archive test results'
    step([$class: 'JUnitResultArchiver', testResults: '**/target/surefire-reports/TEST-*.xml'])
 
    try {
