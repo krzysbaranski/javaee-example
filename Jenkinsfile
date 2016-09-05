@@ -39,6 +39,8 @@ node {
    stage 'Tests'
    try {
       sh "${mvnHome}/bin/mvn -B -Dmaven.test.failure.ignore=true verify"
+   } catch (Exception e) {
+     error 'test fail, please fix test and try again'
    } finally {
       stage 'Archive test results'
       step([$class: 'JUnitResultArchiver', testResults: '**/target/surefire-reports/TEST-*.xml'])
