@@ -38,7 +38,8 @@ node {
 
    stage 'Tests'
    try {
-      sh "${mvnHome}/bin/mvn -B -Dmaven.test.failure.ignore=true verify"
+//      sh "${mvnHome}/bin/mvn -B -Dmaven.test.failure.ignore=true verify"
+      sh "${mvnHome}/bin/mvn -B verify"
    } catch (Exception e) {
      error 'test fail, please fix test and try again'
    } finally {
@@ -109,7 +110,7 @@ node {
 //   }
 
    stage 'dockerfile'
-   def dockerfile = docker.build()
+   def dockerfile = docker.build("javaee-example:${env.BUILD_TAG}", '.')
    dockerfile.inside() {
       sh 'find /opt/jboss/wildfly/standalone/deployments'
    }
