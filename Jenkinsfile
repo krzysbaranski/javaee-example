@@ -58,6 +58,36 @@ node {
    sh "${mvnHome}/bin/mvn -B -DskipTests=true package"
    step([$class: 'ArtifactArchiver', artifacts: '**/target/*.war', fingerprint: true])
 
+
+   // feature branches will skip this block
+//   if (!isFeatureBranch(env.BRANCH_NAME)) {
+
+      //stage 'Human Approval'
+      //println("releases url: " + env.NEXUS_RELEASES_URL)
+      //println("snapshot url: " + env.NEXUS_SNAPSHOT_URL)
+      // don't wait forever
+      //timeout(time: 24, unit: 'HOURS') {
+      //  input message: "Accept publishing artifact to nexus?"
+      //}
+      // stage 'Publish'
+      // https://www.cloudbees.com/blog/workflow-integration-credentials-binding-plugin
+      // https://wiki.jenkins-ci.org/display/JENKINS/Credentials+Binding+Plugin
+      // withCredentials([
+      //  [$class: 'UsernamePasswordMultiBinding', credentialsId: 'nexus-psat', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']
+      // ]) {
+      //  def deployCommand = "mvn deploy --batch-mode -V -s settings.xml " +
+      //    " -DskipTests=true -Dmaven.javadoc.skip=true" +
+      //    " -Dlocal.nexus.snapshots.password=\"" + env.PASSWORD + "\"" +
+      //    " -Dlocal.nexus.snapshots.username=\"" + env.USERNAME + "\"" +
+      //    " -Dlocal.nexus.releases.password=\"" + env.PASSWORD + "\"" +
+      //    " -Dlocal.nexus.releases.username=\"" + env.USERNAME + "\"" +
+      //    " -Dlocal.nexus.releases.url=\"" + env.NEXUS_RELEASES_URL + "\"" +
+      //    " -Dlocal.nexus.snapshots.url=\"" + env.NEXUS_SNAPSHOT_URL + "\"" +
+      //    " -Dlocal.nexus.mirror=\"" + env.NEXUS_MIRROR + "\""
+      // sh "eval ${deployCommand}"
+      //}
+//   }
+
 //   if (!feature(env.BRANCH_NAME)) {
 //     stage 'Deploy'
 //     sh "${mvnHome}/bin/mvn -B deploy"
@@ -69,12 +99,18 @@ node {
 //       …as above
 //   }
 
+//   stage 'docker'
 //   def jboss = docker.image('krzysbaranski/wildfly:7.1.1')
 //   jboss.pull()
 //   jboss.inside() {
-//     sh 'find /opt/jboss/'
+//      sh 'find /opt/jboss/wildfly/standalone/deployments'
 //   }
 
+   stage 'dockerfile'
+   def dockerfile = docker.build()
+   dockerfile.inside() {
+      sh 'find /opt/jboss/wildfly/standalone/deployments'
+   }
 
 //   stage 'Deploy (publish artefact)'
 //   sh "${mvnHome}/bin/mvn deploy"
