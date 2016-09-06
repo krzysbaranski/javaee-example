@@ -117,7 +117,7 @@ node {
      dockerfile.run()
      echo "read containerId"
      def containerId = sh(
-       script: 'docker ps -qfa "ancestor=${dockername}"',
+       script: 'docker ps -qf "ancestor=javaee-example:${env.BUILD_TAG}"',
        returnStdout: true
      ).trim()
      echo "containerId"
