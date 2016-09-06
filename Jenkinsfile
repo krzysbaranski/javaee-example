@@ -118,7 +118,8 @@ node {
      echo ${dockerfile}
      sh 'docker logs ${dockerfile}|grep "org.jboss.as.server.*Deployed.*war"'
    } finally {
-     dockerfile.rm()
+     sh 'docker stop ${dockerfile}'
+     sh 'docker rm ${dockerfile}'
    }
 
 
