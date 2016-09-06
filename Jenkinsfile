@@ -113,23 +113,24 @@ node {
    stage 'dockerfile'
    def dockername = "javaee-example:${env.BUILD_TAG}"
    def dockerfile = docker.build(dockername, '.')
-   def containerId = ""
    try {
      dockerfile.run()
-     vars.containerId = sh(
+     echo "read containerId"
+     def containerId = sh(
        script: 'docker ps -qfa "ancestor=${dockername}',
        returnStdout: true
      ).trim()
-     echo "containerId: ${vars.containerId}"
+     echo "containerId"
+     echo "${containerId}"
 
      //sh 'docker logs ${dockername}|grep "org.jboss.as.server.*Deployed.*war"'
      echo 'logs'
-     sh 'docker logs ${vars.containerId}'
+     sh 'docker logs ${containerId}'
    } finally {
      echo 'stop'
-     sh 'docker stop ${vars.containerId}'
+     sh 'docker stop ${containerId}'
      echo 'rm'
-     sh 'docker rm ${vars.containerId}'
+     sh 'docker rm ${containerId}'
    }
 
 //   stage 'Deploy (publish artefact)'
