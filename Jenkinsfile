@@ -115,11 +115,12 @@ node {
    try {
      dockerfile.run()
      input 'dockerfile - stop?'
-     echo ${dockerfile}
-     sh 'docker logs ${dockerfile}|grep "org.jboss.as.server.*Deployed.*war"'
+     //echo ${dockerfile}
+     //sh 'docker logs ${dockerfile}|grep "org.jboss.as.server.*Deployed.*war"'
+     sh 'env'
    } finally {
-     sh 'docker stop ${dockerfile}'
-     sh 'docker rm ${dockerfile}'
+     //sh 'docker stop ${dockerfile}'
+     //sh 'docker rm ${dockerfile}'
    }
 
 
