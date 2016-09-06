@@ -111,20 +111,19 @@ node {
 //   }
 
    stage 'dockerfile'
-   def dockerfile = docker.build("javaee-example:${env.BUILD_TAG}", '.')
+   def dockername = "javaee-example:${env.BUILD_TAG}"
+   def dockerfile = docker.build(dockername, '.')
    try {
      dockerfile.run()
-     input 'dockerfile - stop?'
-     //echo ${dockerfile}
-     //sh 'docker logs ${dockerfile}|grep "org.jboss.as.server.*Deployed.*war"'
-     sh 'env'
+     //sh 'docker logs ${dockername}|grep "org.jboss.as.server.*Deployed.*war"'
+     echo 'logs'
+     sh 'docker logs ${dockername}'
    } finally {
-     //sh 'docker stop ${dockerfile}'
-     //sh 'docker rm ${dockerfile}'
+     echo 'stop'
+     sh 'docker stop ${dockername}'
+     echo 'rm'
+     sh 'docker rm ${dockername}'
    }
-
-
-   
 
 //   stage 'Deploy (publish artefact)'
 //   sh "${mvnHome}/bin/mvn deploy"
