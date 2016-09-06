@@ -127,10 +127,12 @@ node {
      echo 'logs'
      sh 'docker logs ${container.id}'
    } finally {
-     echo 'stop'
-     sh 'docker stop ${container.id}'
-     echo 'rm'
-     sh 'docker rm ${container.id}'
+     echo 'container stop'
+     container.stop
+     //echo 'stop'
+     //sh 'docker stop ${container.id}'
+     //echo 'rm'
+     //sh 'docker rm ${container.id}'
      echo 'rmi'
      sh 'docker rmi ${dockername}'
    }
