@@ -111,9 +111,16 @@ node {
 
    stage 'dockerfile'
    def dockerfile = docker.build("javaee-example:${env.BUILD_TAG}", '.')
-   dockerfile.inside() {
-      sh 'find /opt/jboss/wildfly/standalone/deployments'
+   try {
+     def dockerId = dockerfile.run()
+     echo dockerId
+     input 'dockerfile - stop?'
+   } finally {
+     dockerId.rm()
    }
+
+
+   
 
 //   stage 'Deploy (publish artefact)'
 //   sh "${mvnHome}/bin/mvn deploy"
