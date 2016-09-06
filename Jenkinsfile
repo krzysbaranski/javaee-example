@@ -117,7 +117,7 @@ node {
    try {
      dockerfile.run()
      vars.containerId = sh(
-       script: 'docker ps -qfa "ancestor=${dockername}'
+       script: 'docker ps -qfa "ancestor=${dockername}',
        returnStdout: true
      ).trim()
      echo "containerId: ${vars.containerId}"
