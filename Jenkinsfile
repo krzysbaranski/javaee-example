@@ -114,23 +114,23 @@ node {
    def dockername = "javaee-example:${env.BUILD_TAG}"
    def dockerfile = docker.build(dockername, '.')
    try {
-     dockerfile.run()
+     def container = dockerfile.run()
      echo "read containerId"
-     def containerId = sh(
-       script: 'docker ps -qf ancestor=javaee-example:${env.BUILD_TAG}',
-       returnStdout: true
-     ).trim()
+     //def containerId = sh(
+     //  script: 'docker ps -qf ancestor=javaee-example:${env.BUILD_TAG}',
+     //  returnStdout: true
+     //).trim()
      echo "containerId"
-     echo "${containerId}"
+     echo "${container.id}"
 
-     //sh 'docker logs ${dockername}|grep "org.jboss.as.server.*Deployed.*war"'
+     //sh 'docker logs ${container.id}|grep "org.jboss.as.server.*Deployed.*war"'
      echo 'logs'
-     sh 'docker logs ${containerId}'
+     sh 'docker logs ${container.id}'
    } finally {
      echo 'stop'
-     sh 'docker stop ${containerId}'
+     sh 'docker stop ${container.id}'
      echo 'rm'
-     sh 'docker rm ${containerId}'
+     sh 'docker rm ${container.id}'
      echo 'rmi'
      sh 'docker rmi ${dockername}'
    }
