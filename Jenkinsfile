@@ -113,8 +113,9 @@ node {
    def dockerfile = docker.build("javaee-example:${env.BUILD_TAG}", '.')
    try {
      def dockerId = dockerfile.run()
-     echo dockerId
+     echo ${dockerId}
      input 'dockerfile - stop?'
+     sh 'docker logs ${dockerId}|grep "org.jboss.as.server.*Deployed.*war"'
    } finally {
      dockerId.rm()
    }
