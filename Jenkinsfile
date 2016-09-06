@@ -118,7 +118,7 @@ node {
      echo ${dockerfile}
      sh 'docker logs ${dockerfile}|grep "org.jboss.as.server.*Deployed.*war"'
    } finally {
-     dockerId.rm()
+     dockerfile.rm()
    }
 
 
