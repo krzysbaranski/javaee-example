@@ -125,14 +125,15 @@ node {
 
      //sh 'docker logs ${container.id}|grep "org.jboss.as.server.*Deployed.*war"'
      echo 'logs'
-     sh 'docker logs ${container.id}'
+     def containerid = container.id
+     sh 'docker logs ${containerid}'
    } finally {
      echo 'container stop'
      container.stop
      //echo 'stop'
-     //sh 'docker stop ${container.id}'
+     //sh 'docker stop ${containerid}'
      //echo 'rm'
-     //sh 'docker rm ${container.id}'
+     //sh 'docker rm ${containerid}'
      echo 'rmi'
      sh 'docker rmi ${dockername}'
    }
