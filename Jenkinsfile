@@ -117,7 +117,7 @@ node {
      dockerfile.run()
      echo "read containerId"
      def containerId = sh(
-       script: 'docker ps -qfa "ancestor=${dockername}',
+       script: 'docker ps -qfa "ancestor=${dockername}"',
        returnStdout: true
      ).trim()
      echo "containerId"
@@ -131,6 +131,8 @@ node {
      sh 'docker stop ${containerId}'
      echo 'rm'
      sh 'docker rm ${containerId}'
+     echo 'rmi'
+     sh 'docker rmi ${dockername}'
    }
 
 //   stage 'Deploy (publish artefact)'
