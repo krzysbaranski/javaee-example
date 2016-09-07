@@ -113,17 +113,19 @@ node {
    stage 'dockerfile'
    def dockername = "javaee-example:${env.BUILD_TAG}"
    def dockerfile = docker.build(dockername, '.')
+   def container
    try {
-     def container = dockerfile.run()
+     container = dockerfile.run()
      echo "containerId ${container.id}"
      //sh 'docker logs ${container.id}|grep "org.jboss.as.server.*Deployed.*war"'
      echo 'logs'
-     def containerid = container.id 
+     containerid = container.id 
      def dockerlogs = "docker logs " + containerid
      sh "eval ${dockerlogs}"
    } finally {
      echo 'container stop'
      container.stop
+     echo "docker rmi"
      def dockerrmi = "docker rmi " + dockername
      sh "eval ${dockerrmi}"
    }
