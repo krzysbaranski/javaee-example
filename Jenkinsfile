@@ -124,7 +124,9 @@ node {
      sh "eval ${dockerlogs}"
    } finally {
      echo 'container stop'
-     container.stop
+     // add http://jenkins/scriptApproval/
+     // method groovy.lang.GroovyObject getProperty java.lang.String
+     container.stop()
      echo "docker rmi"
      def dockerrmi = "docker rmi " + dockername
      sh "eval ${dockerrmi}"
