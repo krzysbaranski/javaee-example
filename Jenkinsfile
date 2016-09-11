@@ -16,7 +16,7 @@ def versionMatcher() {
 }
 
 def pomVersion(path) {
-   def pom = readMavenPom file: 'pom.xml'
+   def pom = readMavenPom file: path
    return pom.getVersion()
 }
 
