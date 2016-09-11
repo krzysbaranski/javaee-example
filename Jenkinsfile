@@ -46,7 +46,7 @@ def findPom() {
   def baseVersion = version()
 
   def poms = findFiles glob: '**/pom.xml'
-  for (int i = 0; i < poms.size; i++ ) {
+  for (int i = 0; i < poms.length; i++ ) {
       def files = poms[i];
       def moduleVersion = pomVersion(files.path)
 
