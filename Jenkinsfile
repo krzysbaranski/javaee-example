@@ -46,7 +46,8 @@ def findPom() {
   def baseVersion = version()
 
   def poms = findFiles glob: '**/pom.xml'
-  for (files in poms) {
+  for (int i = 0; i < poms.size; i++ ) {
+      def files = poms[i];
       def moduleVersion = pomVersion(files.path)
 
       echo "name : ${files.name} path : ${files.path} directory : ${files.directory} length : ${files.length} last mod : ${files.lastModified}"
@@ -58,7 +59,7 @@ def findPom() {
   }
 }
 
-node {
+node() {
    try {
    // Mark the code checkout 'stage'....
    stage 'Checkout'
@@ -97,12 +98,15 @@ node {
    } catch (NoSuchMethodError _) {
       echo 'Checkpoint feature available in Jenkins Enterprise'
    }
+}
+
 
    if (!feature(env.BRANCH_NAME)) {
       stage concurrency: 1, name: 'Human Approval'
       input message: "Does everything really look good?"
    }
 
+node() {
    stage 'Package'
    sh "${mvnHome}/bin/mvn -B -DskipTests=true package"
    step([$class: 'ArtifactArchiver', artifacts: '**/target/*.war', fingerprint: true])
