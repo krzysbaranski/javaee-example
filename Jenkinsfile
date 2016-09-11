@@ -58,12 +58,13 @@ def findPom() {
       }
   }
 }
-// Get the maven tool.
-// ** NOTE: This 'M3' maven tool must be configured
-// **       in the global configuration.
-def mvnHome = tool 'Maven 3.x'
 
 node() {
+   // Get the maven tool.
+   // ** NOTE: This 'M3' maven tool must be configured
+   // **       in the global configuration.
+   def mvnHome = tool 'Maven 3.x'
+
    // Mark the code checkout 'stage'....
    stage 'Checkout'
 
@@ -104,6 +105,11 @@ if (!feature(env.BRANCH_NAME)) {
 }
 
 node() {
+   // Get the maven tool.
+   // ** NOTE: This 'M3' maven tool must be configured
+   // **       in the global configuration.
+   def mvnHome = tool 'Maven 3.x'
+
    stage 'Package'
    sh "${mvnHome}/bin/mvn -B -DskipTests=true package"
    step([$class: 'ArtifactArchiver', artifacts: '**/target/*.war', fingerprint: true])
@@ -111,7 +117,6 @@ node() {
    // feature branches will skip this block
 //   if (!isFeatureBranch(env.BRANCH_NAME)) {
 
-      //stage 'Human Approval'
       //println("releases url: " + env.NEXUS_RELEASES_URL)
       //println("snapshot url: " + env.NEXUS_SNAPSHOT_URL)
       // don't wait forever
@@ -184,7 +189,7 @@ node() {
    }
 
 //   stage 'Deploy (publish artefact)'
-//   sh "${mvnHome}/bin/mvn deploy"
+//   sh "${mv}/bin/mvn deploy"
 //
 //   stage 'Server deploy'
 //   sh "/opt/wildfly-10.0.0.Final/bin/jboss-cli.sh --controller=\"localhost:9990\" -c command=\"deploy target/AwesomeApp.war --force\""
