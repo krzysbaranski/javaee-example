@@ -1,3 +1,4 @@
+#!/usr/bin/env groovy
 @NonCPS
 def feature(branchName) {
    def matcher = (branchName =~ /feature-([a-z_]+)/)
@@ -9,10 +10,45 @@ def feature(branchName) {
    return false
 }
 
-def version() {
+def versionMatcher() {
    def matcher = readFile('pom.xml') =~ '<version>(.+)</version>'
    matcher ? matcher[0][1] : null
 }
+
+def version() {
+   def pom = readMavenPom file: 'pom.xml'
+   return pom.getVersion()
+}
+
+def branch() {
+   return ${env.BRANCH_NAME}
+}
+
+def releaseCheck() {
+  def isMaster = branch().equals('master')
+  def v = version()
+  def isSnapshot = v.containsIgnoreCase('snapshot')
+
+  if (isMaster && isSnapshot) {
+    error ('branch ' + branch() + ' should build only release version but this is ' + v)
+  }
+  if (!isMaster && !isSnapshot) {
+    error ('branch ' + branch() + ' can only build snapshot version! version is ' + v)
+  }
+}
+def findPom() {
+  def poms = findFiles glob: '**/pom.xml'
+  for (files: poms) {
+	echo """${files.name}
+                ${files.path}
+                ${files.directory}
+                ${files.length}
+		${files.lastModified}"""
+  }
+}
+
+releaseCheck()
+findPoms()
 
 node {
    try {
