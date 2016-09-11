@@ -166,10 +166,10 @@ node {
      containerid = container.id 
      def dockerlogs = "docker logs " + containerid
      sh "eval ${dockerlogs}"
-     def cli = "docker tag " + dockername  + "localhost:5000/" + dockername
-     sh "eval ${cli}
-     def push = "docker push " + "localhost:5000/" + dockername
-     sh "eval ${push}"
+     //def cli = "docker tag " + dockername  + "localhost:5000/" + dockername
+     //sh "eval ${cli}"
+     //def push = "docker push " + "localhost:5000/" + dockername
+     //sh "eval ${push}"
    } finally {
      echo 'container stop'
      // add http://jenkins/scriptApproval/
