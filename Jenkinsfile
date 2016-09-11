@@ -38,7 +38,7 @@ def releaseCheck() {
 }
 def findPom() {
   def poms = findFiles glob: '**/pom.xml'
-  for (files: poms) {
+  for (files in poms) {
 	echo """${files.name}
                 ${files.path}
                 ${files.directory}
