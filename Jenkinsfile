@@ -112,7 +112,9 @@ node() {
 
    stage 'Package'
    sh "${mvnHome}/bin/mvn -B -DskipTests=true package"
-   step([$class: 'ArtifactArchiver', artifacts: '**/target/*.war', fingerprint: true])
+   //step([$class: 'ArtifactArchiver', artifacts: '**/target/*.war', fingerprint: true])
+   step([$class: 'Fingerprinter', targets: '**/target/*.jar,**/target/*.war'])
+   stash includes: '**/target/*.jar,**/target/*.war', name: 'artifacts'
 
    // feature branches will skip this block
 //   if (!isFeatureBranch(env.BRANCH_NAME)) {
