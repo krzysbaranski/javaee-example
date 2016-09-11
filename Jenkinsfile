@@ -99,7 +99,7 @@ node {
    }
 
    if (!feature(env.BRANCH_NAME)) {
-      stage 'Human Approval'
+      stage concurrency: 1 name: 'Human Approval'
       input message: "Does everything really look good?"
    }
 
