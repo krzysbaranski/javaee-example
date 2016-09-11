@@ -25,17 +25,19 @@ def branch() {
 }
 
 def releaseCheck() {
-  def isMaster = branch().equals('master')
+  def branch = branch()
+  def isMaster = branch.toLowerCase().equals('master')
   def v = version()
-  def isSnapshot = v.containsIgnoreCase('snapshot')
+  def isSnapshot = v.toLowerCase().contains('snapshot')
 
   if (isMaster && isSnapshot) {
-    error ('branch ' + branch() + ' should build only release version but this is ' + v)
+    error ('branch ' + branch + ' should build only release version but this is ' + v)
   }
   if (!isMaster && !isSnapshot) {
-    error ('branch ' + branch() + ' can only build snapshot version! version is ' + v)
+    error ('branch ' + branch + ' can only build snapshot version! version is ' + v)
   }
 }
+
 def findPom() {
   def poms = findFiles glob: '**/pom.xml'
   for (files in poms) {
