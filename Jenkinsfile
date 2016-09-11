@@ -60,7 +60,6 @@ def findPom() {
 }
 
 node() {
-   try {
    // Mark the code checkout 'stage'....
    stage 'Checkout'
 
@@ -200,27 +199,25 @@ node() {
 //   sh "docker run -it --rm --link some-postgres:postgres postgres psql -h postgres -U postgres"
 //   stage 'docker app'
 //   sh "docker run --name some-app --link some-postgres:postgres -d application-that-uses-postgres"
-
-    echo "project build successful"
-    //mail body: 'project build successful',
-    //from: 'xxxx@yyyyy.com',
-    //replyTo: 'xxxx@yyyy.com',
-    //subject: 'project build successful',
-    //to: 'yyyyy@yyyy.com'
-}
-catch (err) {
-
-    currentBuild.result = "FAILURE"
-
-    echo "project build error: ${err}"
-            //mail body: "project build error: ${err}" ,
-            //from: 'xxxx@yyyy.com',
-            //replyTo: 'yyyy@yyyy.com',
-            //subject: 'project build failed',
-            //to: 'zzzz@yyyyy.com'
-
-    throw err
 }
 
 
-}
+//  try {
+//    ...
+//
+//    echo "project build successful"
+//    mail body: 'project build successful',
+//    from: 'xxxx@yyyyy.com',
+//    replyTo: 'xxxx@yyyy.com',
+//    subject: 'project build successful',
+//    to: 'yyyyy@yyyy.com'
+//  } catch (err) {
+//    currentBuild.result = "FAILURE"
+//    echo "project build error: ${err}"
+//    mail body: "project build error: ${err}" ,
+//    from: 'xxxx@yyyy.com',
+//    replyTo: 'yyyy@yyyy.com',
+//    subject: 'project build failed',
+//    to: 'zzzz@yyyyy.com'
+//      throw err
+//  }
