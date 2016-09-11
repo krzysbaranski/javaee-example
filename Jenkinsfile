@@ -21,7 +21,7 @@ def version() {
 }
 
 def branch() {
-   return ${env.BRANCH_NAME}
+   return '${env.BRANCH_NAME}'
 }
 
 def releaseCheck() {
