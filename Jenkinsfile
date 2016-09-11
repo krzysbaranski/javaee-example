@@ -47,9 +47,6 @@ def findPom() {
   }
 }
 
-releaseCheck()
-findPoms()
-
 node {
    try {
    // Mark the code checkout 'stage'....
@@ -57,7 +54,10 @@ node {
 
    // Checkout code from repository
    checkout scm
-   echo "branch is: ${env.BRANCH_NAME}"
+   echo 'branch is: ' + branch()
+
+   releaseCheck()
+   findPoms()
 
    // Get the maven tool.
    // ** NOTE: This 'M3' maven tool must be configured
@@ -66,10 +66,8 @@ node {
 
    // Mark the code build 'stage'....
    stage 'Build'
-   def v = version()
-   if (v) {
-      echo "Building version ${v}"
-   }
+   echo 'Building version ' + version()
+   
    // Run the maven build
    sh "${mvnHome}/bin/mvn -B -DskipTests=true clean compile"
 
@@ -97,13 +95,6 @@ node {
    stage 'Package'
    sh "${mvnHome}/bin/mvn -B -DskipTests=true package"
    step([$class: 'ArtifactArchiver', artifacts: '**/target/*.war', fingerprint: true])
-
-
-   stage 'Deploy'
-   def pom = readMavenPom file: 'pom.xml'
-   def version = pom.getVersion()
-   echo version
-
 
    // feature branches will skip this block
 //   if (!isFeatureBranch(env.BRANCH_NAME)) {
