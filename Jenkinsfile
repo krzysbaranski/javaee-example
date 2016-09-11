@@ -59,7 +59,7 @@ node {
    echo 'branch is: ' + branch()
 
    releaseCheck()
-   findPoms()
+   findPom()
 
    // Get the maven tool.
    // ** NOTE: This 'M3' maven tool must be configured
