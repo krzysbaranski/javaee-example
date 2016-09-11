@@ -46,9 +46,9 @@ def findPom() {
   def poms = findFiles glob: '**/pom.xml'
   def baseVersion = version()
   for (files in poms) {
-      pomVersion = pomVersion(files.path)
+      def pomVersion = pomVersion(files.path)
 
-      if (!pomVersion.equals(baseVersion()) {
+      if (!pomVersion.equals(baseVersion)) {
         error ('pom.xml versions inconsistent with modules')
       }
 
