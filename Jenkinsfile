@@ -15,9 +15,13 @@ def versionMatcher() {
    matcher ? matcher[0][1] : null
 }
 
-def version() {
+def pomVersion(path) {
    def pom = readMavenPom file: 'pom.xml'
    return pom.getVersion()
+}
+
+def version() {
+   return pomVersion('pom.xml')
 }
 
 def branch() {
@@ -40,12 +44,19 @@ def releaseCheck() {
 
 def findPom() {
   def poms = findFiles glob: '**/pom.xml'
+  def baseVersion = version()
   for (files in poms) {
-	echo """${files.name}
-                ${files.path}
-                ${files.directory}
-                ${files.length}
-		${files.lastModified}"""
+      pomVersion = pomVersion(files.path)
+
+      if (!pomVersion.equals(baseVersion()) {
+        error ('pom.xml versions inconsistent with modules')
+      }
+
+      echo """name : ${files.name}
+              path : ${files.path}
+              directory : ${files.directory}
+              length : ${files.length}
+              last mod : ${files.lastModified}"""
   }
 }
 
