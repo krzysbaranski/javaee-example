@@ -63,6 +63,12 @@ node {
    step([$class: 'ArtifactArchiver', artifacts: '**/target/*.war', fingerprint: true])
 
 
+   stage 'Deploy'
+   def pom = readMavenPom file: 'pom.xml'
+   def version = pom.getVersion()
+   echo version
+
+
    // feature branches will skip this block
 //   if (!isFeatureBranch(env.BRANCH_NAME)) {
 
