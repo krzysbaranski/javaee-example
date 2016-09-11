@@ -58,6 +58,10 @@ def findPom() {
       }
   }
 }
+// Get the maven tool.
+// ** NOTE: This 'M3' maven tool must be configured
+// **       in the global configuration.
+def mvnHome = tool 'Maven 3.x'
 
 node() {
    // Mark the code checkout 'stage'....
@@ -67,16 +71,10 @@ node() {
    checkout scm
    echo 'branch is: ' + branch()
 
-   releaseCheck()
-   findPom()
-
-   // Get the maven tool.
-   // ** NOTE: This 'M3' maven tool must be configured
-   // **       in the global configuration.
-   def mvnHome = tool 'Maven 3.x'
-
    // Mark the code build 'stage'....
    stage 'Build'
+   releaseCheck()
+   findPom()
    echo 'Building version ' + version()
    
    // Run the maven build
@@ -99,11 +97,11 @@ node() {
    }
 }
 
-
-   if (!feature(env.BRANCH_NAME)) {
-      stage concurrency: 1, name: 'Human Approval'
-      input message: "Does everything really look good?"
-   }
+// don't block node 
+if (!feature(env.BRANCH_NAME)) {
+  stage concurrency: 1, name: 'Human Approval'
+  input message: "Does everything really look good?"
+}
 
 node() {
    stage 'Package'
@@ -156,7 +154,9 @@ node() {
 //   jboss.inside() {
 //      sh 'find /opt/jboss/wildfly/standalone/deployments'
 //   }
+}
 
+node() {
    stage 'dockerfile'
    def dockername = "javaee-example:${env.BUILD_TAG}"
    def dockerfile = docker.build(dockername, '.')
