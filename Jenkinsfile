@@ -43,20 +43,18 @@ def releaseCheck() {
 }
 
 def findPom() {
-  def poms = findFiles glob: '**/pom.xml'
   def baseVersion = version()
-  for (files in poms) {
-      def pomVersion = pomVersion(files.path)
 
-      if (!pomVersion.equals(baseVersion)) {
+  def poms = findFiles glob: '**/pom.xml'
+  for (files in poms) {
+      def moduleVersion = pomVersion(files.path)
+
+      echo "name : ${files.name} path : ${files.path} directory : ${files.directory} length : ${files.length} last mod : ${files.lastModified}"
+      echo "version : ${moduleVersion}"
+
+      if (!baseVersion.equals(moduleVersion)) {
         error ('pom.xml versions inconsistent with modules')
       }
-
-      echo """name : ${files.name}
-              path : ${files.path}
-              directory : ${files.directory}
-              length : ${files.length}
-              last mod : ${files.lastModified}"""
   }
 }
 
@@ -168,6 +166,10 @@ node {
      containerid = container.id 
      def dockerlogs = "docker logs " + containerid
      sh "eval ${dockerlogs}"
+     def cli = "docker tag " + dockername  + "localhost:5000/" + dockername
+     sh "eval ${cli}
+     def push = "docker push " + "localhost:5000/" + dockername
+     sh "eval ${push}"
    } finally {
      echo 'container stop'
      // add http://jenkins/scriptApproval/
