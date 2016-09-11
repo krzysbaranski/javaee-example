@@ -23,6 +23,7 @@
             <manifestEntries>
 	      <Scm-Revision>${buildNumber}</Scm-Revision>
 	      <Scm-Branch>${scmBranch}</Scm-Branch>
+	      <Scm-Branch-Name>${env.BRANCH_NAME}</Scm-Branch-Name>
 	      <Scm-Url>https://github.com/krzysbaranski/javaee-example.git</Scm-Url>
 	      <Build-Host>${env.HOSTNAME}</Build-Host>
 	      <Build-URL>${env.BUILD_URL}</Build-URL>
