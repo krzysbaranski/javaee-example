@@ -66,22 +66,24 @@ node() {
    def mvnHome = tool 'Maven 3.x'
 
    // Mark the code checkout 'stage'....
-   stage 'Checkout'
+   stage('Checkout') {
 
    // Checkout code from repository
    checkout scm
    echo 'branch is: ' + branch()
+   }
 
    // Mark the code build 'stage'....
-   stage 'Build'
+   stage('Build') {
    releaseCheck()
    findPom()
    echo 'Building version ' + version()
    
    // Run the maven build
    sh "${mvnHome}/bin/mvn -B -DskipTests=true clean compile"
+   }
 
-   stage 'Tests'
+   stage('Tests') {
    try {
 //      sh "${mvnHome}/bin/mvn -B -Dmaven.test.failure.ignore=true verify"
       sh "${mvnHome}/bin/mvn -B verify"
@@ -95,6 +97,7 @@ node() {
       checkpoint 'Completed tests'
    } catch (NoSuchMethodError _) {
       echo 'Checkpoint feature available in Jenkins Enterprise'
+   }
    }
 }
 
@@ -110,11 +113,12 @@ node() {
    // **       in the global configuration.
    def mvnHome = tool 'Maven 3.x'
 
-   stage 'Package'
+   stage('Package') {
    sh "${mvnHome}/bin/mvn -B -DskipTests=true package"
    //step([$class: 'ArtifactArchiver', artifacts: '**/target/*.war', fingerprint: true])
    step([$class: 'Fingerprinter', targets: '**/target/*.jar,**/target/*.war'])
    stash includes: '**/target/*.jar,**/target/*.war', name: 'artifacts'
+   }
 
    // feature branches will skip this block
 //   if (!isFeatureBranch(env.BRANCH_NAME)) {
@@ -164,7 +168,7 @@ node() {
 }
 
 node() {
-   stage 'dockerfile'
+   stage('dockerfile') {
    def dockername = "javaee-example:${env.BUILD_TAG}"
    def dockerfile = docker.build(dockername, '.')
    def container
@@ -188,6 +192,7 @@ node() {
      echo "docker rmi"
      def dockerrmi = "docker rmi " + dockername
      sh "eval ${dockerrmi}"
+   }
    }
 
 //   stage 'Deploy (publish artefact)'
