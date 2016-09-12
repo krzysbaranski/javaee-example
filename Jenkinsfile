@@ -90,7 +90,7 @@ node() {
    } catch (Exception e) {
      error 'test fail, please fix test and try again'
    } finally {
-      stage 'Archive test results'
+      echo 'Archive test results'
       step([$class: 'JUnitResultArchiver', testResults: '**/target/surefire-reports/TEST-*.xml'])
    }
    try {
