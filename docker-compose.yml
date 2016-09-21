@@ -1,0 +1,25 @@
+version: "2"
+services:
+  jboss:
+    environment:
+     - JAVA_OPTS
+    build: .
+    ports:
+     - "8080"
+     - "8443"
+     - "9990"
+     - "9999"
+    depends_on:
+     - db
+    #volumes:
+    # - ./target:/opt/jboss/wildfly/standalone/deployments/
+  db:
+    image: krzysbaranski/postgres-pl:9.5
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    ports:
+      - "5432"
+volumes:
+  db-data:
+    external:
+      name: awesomeapp-data-volume

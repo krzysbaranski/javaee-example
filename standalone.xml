@@ -147,8 +147,8 @@
                         <max-pool-size>20</max-pool-size>
                     </pool>
                     <security>
-                        <user-name>postgres</user-name>
-                        <password>postgres</password>
+                        <user-name>docker</user-name>
+                        <password>docker</password>
                     </security>
                     <validation>
                         <check-valid-connection-sql>SELECT 1</check-valid-connection-sql>

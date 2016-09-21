@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <persistence xmlns="http://xmlns.jcp.org/xml/ns/persistence" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="2.1" xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/persistence http://xmlns.jcp.org/xml/ns/persistence/persistence_2_1.xsd">
+
+  <!--
   <persistence-unit name="awesomeapp-persistence-unit" transaction-type="JTA">
     <description>Forge Persistence Unit</description>
     <provider>org.hibernate.ejb.HibernatePersistence</provider>
@@ -13,4 +15,20 @@
       <property name="hibernate.dialect" value="org.hibernate.dialect.H2Dialect"/>
     </properties>
   </persistence-unit>
+  -->
+
+  <persistence-unit name="awesomeapp-persistence-unit">
+    <jta-data-source>java:jboss/datasources/PostgresDS</jta-data-source>
+    <!-- <shared-cache-mode>DISABLE_SELECTIVE</shared-cache-mode> -->
+    <properties>
+      <property name="hibernate.dialect" value="org.hibernate.dialect.PostgreSQL94Dialect"/>
+      <property name="hibernate.show_sql" value="false"/>
+      <property name="hibernate.format_sql" value="true"/>
+      <property name="hibernate.use_sql_comments" value="true"/>
+      <!-- <property name="hibernate.cache.use_second_level_cache" value="true"/> -->
+      <!-- <property name="hibernate.cache.use_minimal_puts" value="true"/> -->
+      <!-- <property name="hibernate.ejb.interceptor" value="" /> -->
+    </properties>
+  </persistence-unit>
 </persistence>
+
