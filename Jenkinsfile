@@ -67,6 +67,7 @@ node() {
    // Get the maven tool.
    // ** NOTE: This 'M3' maven tool must be configured
    // **       in the global configuration.
+   sh 'env'
    def mvnHome = tool 'Maven 3.x'
 
    // Mark the code checkout 'stage'....
@@ -164,8 +165,10 @@ node() {
 stage('Arquillian tests') {
   node() {
     def mvnHome = tool 'Maven 3.x'
-    withEnv(['JBOSS_HOME=target/wildfly-10.1.0.Final']) {
-      sh "${mvnHome}/bin/mvn -B test -Parquillian-wildfly-managed"
+    lock(resource: 'port-8080', inversePrecedence: true) {
+      withEnv(['JBOSS_HOME=target/wildfly-10.1.0.Final']) {
+        sh "${mvnHome}/bin/mvn -B test -Parquillian-wildfly-managed"
+      }
     }
   }
 }
