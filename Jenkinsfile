@@ -85,7 +85,7 @@ node() {
 
    stage('Tests') {
    try {
-//      sh "${mvnHome}/bin/mvn -B -Dmaven.test.failure.ignore=true verify"
+     // sh "${mvnHome}/bin/mvn -B -Dmaven.test.failure.ignore=true verify"
       sh "${mvnHome}/bin/mvn -B verify"
    } catch (Exception e) {
      error 'test fail, please fix test and try again'
@@ -108,50 +108,48 @@ if (!feature(env.BRANCH_NAME)) {
 }
 
 node() {
-   // Get the maven tool.
-   // ** NOTE: This 'M3' maven tool must be configured
-   // **       in the global configuration.
-   def mvnHome = tool 'Maven 3.x'
+  // Get the maven tool.
+  // ** NOTE: This 'M3' maven tool must be configured
+  // **       in the global configuration.
+  def mvnHome = tool 'Maven 3.x'
 
-   stage('Package') {
-   sh "${mvnHome}/bin/mvn -B -DskipTests=true package"
-   //step([$class: 'ArtifactArchiver', artifacts: '**/target/*.war', fingerprint: true])
-   step([$class: 'Fingerprinter', targets: '**/target/*.jar,**/target/*.war'])
-   stash includes: '**/target/*.jar,**/target/*.war', name: 'artifacts'
-   }
+  stage('Package') {
+    sh "${mvnHome}/bin/mvn -B -DskipTests=true package"
+    //step([$class: 'ArtifactArchiver', artifacts: '**/target/*.war', fingerprint: true])
+    step([$class: 'Fingerprinter', targets: '**/target/*.jar,**/target/*.war'])
+    stash includes: '**/target/*.jar,**/target/*.war', name: 'artifacts'
+  }
+}
 
-   // feature branches will skip this block
-//   if (!isFeatureBranch(env.BRANCH_NAME)) {
+// feature branches will skip this block
+   if (!isFeatureBranch(branch())) {
 
-      //println("releases url: " + env.NEXUS_RELEASES_URL)
-      //println("snapshot url: " + env.NEXUS_SNAPSHOT_URL)
+      println("releases url: " + env.NEXUS_RELEASES_URL)
+      println("snapshot url: " + env.NEXUS_SNAPSHOT_URL)
       // don't wait forever
-      //timeout(time: 24, unit: 'HOURS') {
-      //  input message: "Accept publishing artifact to nexus?"
-      //}
-      // stage 'Publish'
-      // https://www.cloudbees.com/blog/workflow-integration-credentials-binding-plugin
-      // https://wiki.jenkins-ci.org/display/JENKINS/Credentials+Binding+Plugin
-      // withCredentials([
-      //  [$class: 'UsernamePasswordMultiBinding', credentialsId: 'nexus-psat', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']
-      // ]) {
-      //  def deployCommand = "mvn deploy --batch-mode -V -s settings.xml " +
-      //    " -DskipTests=true -Dmaven.javadoc.skip=true" +
-      //    " -Dlocal.nexus.snapshots.password=\"" + env.PASSWORD + "\"" +
-      //    " -Dlocal.nexus.snapshots.username=\"" + env.USERNAME + "\"" +
-      //    " -Dlocal.nexus.releases.password=\"" + env.PASSWORD + "\"" +
-      //    " -Dlocal.nexus.releases.username=\"" + env.USERNAME + "\"" +
-      //    " -Dlocal.nexus.releases.url=\"" + env.NEXUS_RELEASES_URL + "\"" +
-      //    " -Dlocal.nexus.snapshots.url=\"" + env.NEXUS_SNAPSHOT_URL + "\"" +
-      //    " -Dlocal.nexus.mirror=\"" + env.NEXUS_MIRROR + "\""
-      // sh "eval ${deployCommand}"
-      //}
-//   }
-
-//   if (!feature(env.BRANCH_NAME)) {
-//     stage 'Deploy'
-//     sh "${mvnHome}/bin/mvn -B deploy"
-//   }
+      timeout(time: 24, unit: 'HOURS') {
+        input message: "Accept publishing artifact to nexus from branch: " + branch()
+      }
+      milestone label: 'deploy'
+      stage('Publish') {
+        // https://www.cloudbees.com/blog/workflow-integration-credentials-binding-plugin
+        // https://wiki.jenkins-ci.org/display/JENKINS/Credentials+Binding+Plugin
+        withCredentials([
+          [$class: 'UsernamePasswordMultiBinding', credentialsId: 'nexus', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']
+        ]) {
+          def deployCommand = "mvn deploy --batch-mode -V -s settings.xml " +
+            " -DskipTests=true -Dmaven.javadoc.skip=true" +
+            " -Dlocal.nexus.snapshots.password=\"" + env.PASSWORD + "\"" +
+            " -Dlocal.nexus.snapshots.username=\"" + env.USERNAME + "\"" +
+            " -Dlocal.nexus.releases.password=\"" + env.PASSWORD + "\"" +
+            " -Dlocal.nexus.releases.username=\"" + env.USERNAME + "\"" +
+            " -Dlocal.nexus.releases.url=\"" + env.NEXUS_RELEASES_URL + "\"" +
+            " -Dlocal.nexus.snapshots.url=\"" + env.NEXUS_SNAPSHOT_URL + "\"" +
+            " -Dlocal.nexus.mirror=\"" + env.NEXUS_MIRROR + "\""
+          sh "eval ${deployCommand}"
+        }
+      }
+   }
 
 //   def maven = docker.image('maven:latest')
 //   maven.pull() // make sure we have the latest available from Docker Hub
@@ -166,8 +164,15 @@ node() {
 //      sh 'find /opt/jboss/wildfly/standalone/deployments'
 //   }
 }
-
 node() {
+
+  JBOSS_HOME=target/wildfly-10.1.0.Final
+  sh "${mvnHome}/bin/mvn -B test -Parquillian-wildfly-managed"
+
+
+}
+
+node("docker") {
    stage('dockerfile') {
    def dockername = "javaee-example:${env.BUILD_TAG}"
    def dockerfile = docker.build(dockername, '.')

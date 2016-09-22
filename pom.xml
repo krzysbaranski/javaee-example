@@ -85,13 +85,97 @@
   </properties>
   <profiles>
     <profile>
+      <id>skip-arquillian-tests</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <version>2.10</version>
+            <configuration>
+              <excludes>
+                <!-- skip arquillian test in default profile -->
+                <exclude>**/*ArqTest.java</exclude>
+              </excludes>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
       <id>arquillian-wildfly-managed</id>
       <build>
         <plugins>
           <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-dependency-plugin</artifactId>
+            <version>2.10</version>
+            <executions>
+              <execution>
+                <id>analyze</id>
+                <goals>
+                  <goal>analyze-only</goal>
+                </goals>
+                <configuration>
+                  <failOnWarning>true</failOnWarning>
+                  <ignoredUnusedDeclaredDependencies>
+                    <ignoredUsedUndeclaredDependency>net.sf.jasperreports:jasperreports-fonts</ignoredUsedUndeclaredDependency>
+                    <ignoredUsedUndeclaredDependency>xalan:xalan</ignoredUsedUndeclaredDependency>
+                    <ignoredUnusedDeclaredDependency>commons-beanutils:commons-beanutils</ignoredUnusedDeclaredDependency>
+                    <ignoredUnusedDeclaredDependency>commons-collections:commons-collections</ignoredUnusedDeclaredDependency>
+                    <ignoredUnusedDeclaredDependency>commons-digester:commons-digester</ignoredUnusedDeclaredDependency>
+                    <ignoredUnusedDeclaredDependency>commons-dbcp:commons-dbcp</ignoredUnusedDeclaredDependency>
+                    <ignoredUnusedDeclaredDependency>commons-pool:commons-pool</ignoredUnusedDeclaredDependency>
+                    <ignoredUnusedDeclaredDependency>org.apache.axis:axis</ignoredUnusedDeclaredDependency>
+                    <ignoredUnusedDeclaredDependency>org.infinispan:infinispan-tree</ignoredUnusedDeclaredDependency>
+                    <ignoredUnusedDeclaredDependency>org.infinispan:infinispan-client-hotrod</ignoredUnusedDeclaredDependency>
+                    <ignoredUnusedDeclaredDependency>org.jboss.arquillian.junit:arquillian-junit-container</ignoredUnusedDeclaredDependency>
+                    <ignoredUnusedDeclaredDependency>org.jboss.as:jboss-as-arquillian-container-managed</ignoredUnusedDeclaredDependency>
+                  </ignoredUnusedDeclaredDependencies>
+                </configuration>
+              </execution>
+              <execution>
+                <id>unpack</id>
+                <phase>generate-test-resources</phase>
+                <goals>
+                  <goal>unpack</goal>
+                </goals>
+                <configuration>
+                  <artifactItems>
+                    <artifactItem>
+                      <groupId>org.wildfly</groupId>
+                      <artifactId>wildfly-dist</artifactId>
+                      <version>10.1.0.Final</version>
+                      <type>tar.gz</type>
+                      <overWrite>false</overWrite>
+                      <outputDirectory>${project.build.directory}</outputDirectory>
+                    </artifactItem>
+                    <!--
+                    <artifactItem>
+                      <groupId>appserver-modules</groupId>
+                      <artifactId>modules</artifactId>
+                      <version>1.0.0</version>
+                      <classifier>wildfly-10.0.0</classifier>
+                      <type>tar.gz</type>
+                      <overWrite>false</overWrite>
+                      <outputDirectory>${project.build.directory}/wildfly-10.0.0.Final/modules/system/layers/base</outputDirectory>
+                    </artifactItem>
+                    -->
+                  </artifactItems>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
             <artifactId>maven-surefire-plugin</artifactId>
             <version>2.14.1</version>
             <configuration>
+              <includes>
+                <include>**/*ArqTest.java</include>
+              </includes>
               <systemPropertyVariables>
                 <arquillian.launch>arquillian-wildfly-managed</arquillian.launch>
               </systemPropertyVariables>
@@ -116,6 +200,9 @@
             <artifactId>maven-surefire-plugin</artifactId>
             <version>2.14.1</version>
             <configuration>
+              <includes>
+                <include>**/*ArqTest.java</include>
+              </includes>
               <systemPropertyVariables>
                 <arquillian.launch>arquillian-wildfly-remote</arquillian.launch>
               </systemPropertyVariables>
@@ -127,7 +214,7 @@
         <dependency>
           <groupId>org.wildfly</groupId>
           <artifactId>wildfly-arquillian-container-remote</artifactId>
-          <version>8.2.1.Final</version>
+          <version>LATEST</version>
           <scope>test</scope>
         </dependency>
       </dependencies>
@@ -194,11 +281,5 @@
       <scope>test</scope>
     </dependency>
     -->
-    <dependency>
-      <groupId>org.jboss.shrinkwrap</groupId>
-      <artifactId>shrinkwrap-api</artifactId>
-      <version>1.2.3</version>
-      <scope>test</scope>
-    </dependency>
   </dependencies>
 </project>

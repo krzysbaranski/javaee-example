@@ -14,7 +14,7 @@ import org.junit.runner.RunWith;
 import javax.inject.Inject;
 
 @RunWith(Arquillian.class)
-public class BookEndpointTest {
+public class BookEndpointArqTest {
 
 	@Inject
 	private BookEndpoint bookEndpoint;
