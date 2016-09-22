@@ -101,7 +101,7 @@ node() {
 
 // don't block node 
 if (!feature(env.BRANCH_NAME)) {
-  stage(concurrency: 1, name: 'Human Approval') {
+  stage("Human Approval") {
     input message: "Does everything really look good?"
   }
 }
