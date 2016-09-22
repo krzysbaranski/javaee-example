@@ -164,12 +164,12 @@ if (!isFeatureBranch(branch())) {
 //      sh 'find /opt/jboss/wildfly/standalone/deployments'
 //   }
 
-node() {
-
-  JBOSS_HOME=target/wildfly-10.1.0.Final
-  sh "${mvnHome}/bin/mvn -B test -Parquillian-wildfly-managed"
-
-
+stage('Arquillian tests') {
+  node() {
+    withEnv(['JBOSS_HOME=target/wildfly-10.1.0.Final']) {
+      sh "${mvnHome}/bin/mvn -B test -Parquillian-wildfly-managed"
+    }
+  }
 }
 
 node("docker") {
