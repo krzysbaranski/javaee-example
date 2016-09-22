@@ -8,6 +8,20 @@
   <scm>
     <connection>scm:git://git://github.com/krzysbaranski/javaee-example.git</connection>
   </scm>
+
+  <distributionManagement>
+    <repository>
+      <id>releases</id>
+      <name>Releases</name>
+      <url>${local.nexus.releases.url}</url>
+    </repository>
+    <snapshotRepository>
+      <id>snapshots</id>
+      <name>Snapshots</name>
+      <url>${local.nexus.snapshots.url}</url>
+    </snapshotRepository>
+  </distributionManagement>
+
   <build>
     <finalName>AwesomeApp</finalName>
     <plugins>
