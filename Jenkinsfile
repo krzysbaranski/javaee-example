@@ -126,6 +126,7 @@ if (!feature(branch())) {
 node() {
   stage('Publish') {
     milestone label: 'deploy'
+    def mvnHome = tool 'Maven 3.x'
     println("releases url: " + env.NEXUS_RELEASES_URL)
     println("snapshot url: " + env.NEXUS_SNAPSHOT_URL)
     // https://www.cloudbees.com/blog/workflow-integration-credentials-binding-plugin
@@ -133,7 +134,7 @@ node() {
     withCredentials([
       [$class: 'UsernamePasswordMultiBinding', credentialsId: 'nexus', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']
     ]) {
-      def deployCommand = "${mvnHome}/bin/mvn deploy --batch-mode -V -s settings.xml " +
+      def deployCommand = ${mvnHome}/bin/mvn deploy --batch-mode -V -s settings.xml " +
         " -DskipTests=true -Dmaven.javadoc.skip=true" +
         " -Dlocal.nexus.snapshots.password=\"" + env.PASSWORD + "\"" +
         " -Dlocal.nexus.snapshots.username=\"" + env.USERNAME + "\"" +
