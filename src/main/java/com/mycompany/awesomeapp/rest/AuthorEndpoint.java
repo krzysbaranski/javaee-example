@@ -28,7 +28,7 @@ import com.mycompany.awesomeapp.model.Author;
 @Stateless
 @Path("/authors")
 public class AuthorEndpoint {
-	@PersistenceContext(unitName = "awesomeapp-persistence-unit")
+	@PersistenceContext(unitName = "DefaultPU")
 	private EntityManager em;
 
 	@POST

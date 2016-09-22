@@ -28,7 +28,7 @@ import com.mycompany.awesomeapp.model.Book;
 @Stateless
 @Path("/books")
 public class BookEndpoint {
-	@PersistenceContext(unitName = "awesomeapp-persistence-unit")
+	@PersistenceContext(unitName = "DefaultPU")
 	private EntityManager em;
 
 	@POST
