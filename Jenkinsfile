@@ -134,7 +134,7 @@ node() {
     withCredentials([
       [$class: 'UsernamePasswordMultiBinding', credentialsId: 'nexus', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']
     ]) {
-      def deployCommand = mvnHome + "/bin/mvn deploy --batch-mode -V -s settings.xml " +
+      def deployCommand = "${mvnHome}/bin/mvn deploy --batch-mode -V -s settings.xml " +
         " -DskipTests=true -Dmaven.javadoc.skip=true" +
         " -Dlocal.nexus.snapshots.password=\"" + env.PASSWORD + "\"" +
         " -Dlocal.nexus.snapshots.username=\"" + env.USERNAME + "\"" +
@@ -163,6 +163,7 @@ node() {
 
 stage('Arquillian tests') {
   node() {
+    def mvnHome = tool 'Maven 3.x'
     withEnv(['JBOSS_HOME=target/wildfly-10.1.0.Final']) {
       sh "${mvnHome}/bin/mvn -B test -Parquillian-wildfly-managed"
     }
