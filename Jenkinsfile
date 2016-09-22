@@ -1,4 +1,6 @@
 #!/usr/bin/env groovy
+
+// check if branch name starts with "feature-"
 @NonCPS
 def feature(branchName) {
    def matcher = (branchName =~ /feature-([a-z_]+)/)
@@ -10,6 +12,7 @@ def feature(branchName) {
    return false
 }
 
+@NonCPS
 def versionMatcher() {
    def matcher = readFile('pom.xml') =~ '<version>(.+)</version>'
    matcher ? matcher[0][1] : null
@@ -28,6 +31,7 @@ def branch() {
    return "${env.BRANCH_NAME}"
 }
 
+// check if build is from master branch and app version is correctly set
 def releaseCheck() {
   def branch = branch()
   def isMaster = branch.toLowerCase().equals('master')
@@ -42,6 +46,7 @@ def releaseCheck() {
   }
 }
 
+// find all pom.xml files
 def findPom() {
   def baseVersion = version()
 
@@ -50,11 +55,10 @@ def findPom() {
       def files = poms[i];
       def moduleVersion = pomVersion(files.path)
 
-      echo "name : ${files.name} path : ${files.path} directory : ${files.directory} length : ${files.length} last mod : ${files.lastModified}"
-      echo "version : ${moduleVersion}"
+      echo "module ${files.path} version is ${moduleVersion}"
 
       if (!baseVersion.equals(moduleVersion)) {
-        error ('pom.xml versions inconsistent with modules')
+        error ("main pom.xml version is {$baseVersion} and is inconsistent with module ${files.path} version ${moduleVersion}")
       }
   }
 }
@@ -67,44 +71,39 @@ node() {
 
    // Mark the code checkout 'stage'....
    stage('Checkout') {
-
-   // Checkout code from repository
-   checkout scm
-   echo 'branch is: ' + branch()
+     // Checkout code from repository
+     checkout scm
+     echo 'branch is: ' + branch()
    }
 
    // Mark the code build 'stage'....
    stage('Build') {
-   releaseCheck()
-   findPom()
-   echo 'Building version ' + version()
-   
-   // Run the maven build
-   sh "${mvnHome}/bin/mvn -B -DskipTests=true clean compile"
+     releaseCheck()
+     findPom()
+     echo 'Building version ' + version()
+
+     // Run the maven build
+     sh "${mvnHome}/bin/mvn -B -DskipTests=true clean compile"
    }
 
    stage('Tests') {
-   try {
-     // sh "${mvnHome}/bin/mvn -B -Dmaven.test.failure.ignore=true verify"
-      sh "${mvnHome}/bin/mvn -B verify"
-   } catch (Exception e) {
-     error 'test fail, please fix test and try again'
-   } finally {
-      echo 'Archive test results'
-      step([$class: 'JUnitResultArchiver', testResults: '**/target/surefire-reports/TEST-*.xml'])
-   }
-   try {
-      checkpoint 'Completed tests'
-   } catch (NoSuchMethodError _) {
-      echo 'Checkpoint feature available in Jenkins Enterprise'
-   }
+     try {
+       // sh "${mvnHome}/bin/mvn -B -Dmaven.test.failure.ignore=true verify"
+       sh "${mvnHome}/bin/mvn -B verify"
+     } catch (Exception e) {
+       error 'test fail, please fix test and try again'
+     } finally {
+       echo 'Archive test results'
+       step([$class: 'JUnitResultArchiver', testResults: '**/target/surefire-reports/TEST-*.xml'])
+     }
    }
 }
 
 // don't block node 
 if (!feature(env.BRANCH_NAME)) {
-  stage concurrency: 1, name: 'Human Approval'
-  input message: "Does everything really look good?"
+  stage(concurrency: 1, name: 'Human Approval') {
+    input message: "Does everything really look good?"
+  }
 }
 
 node() {
@@ -122,7 +121,7 @@ node() {
 }
 
 // feature branches will skip this block
-if (!isFeatureBranch(branch())) {
+if (!feature(branch())) {
 
   println("releases url: " + env.NEXUS_RELEASES_URL)
   println("snapshot url: " + env.NEXUS_SNAPSHOT_URL)
