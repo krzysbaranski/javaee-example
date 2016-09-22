@@ -129,7 +129,9 @@ if (!feature(branch())) {
   timeout(time: 24, unit: 'HOURS') {
     input message: "Accept publishing artifact to nexus from branch: " + branch()
   }
+}
 
+node() {
   stage('Publish') {
     milestone label: 'deploy'
     // https://www.cloudbees.com/blog/workflow-integration-credentials-binding-plugin
