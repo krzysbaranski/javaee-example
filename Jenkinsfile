@@ -99,13 +99,6 @@ node() {
    }
 }
 
-// don't block node 
-if (!feature(env.BRANCH_NAME)) {
-  stage("Human Approval") {
-    input message: "Does everything really look good?"
-  }
-}
-
 node() {
   // Get the maven tool.
   // ** NOTE: This 'M3' maven tool must be configured
@@ -123,8 +116,7 @@ node() {
 // feature branches will skip this block
 if (!feature(branch())) {
 
-  println("releases url: " + env.NEXUS_RELEASES_URL)
-  println("snapshot url: " + env.NEXUS_SNAPSHOT_URL)
+
   // don't wait forever
   timeout(time: 24, unit: 'HOURS') {
     input message: "Accept publishing artifact to nexus from branch: " + branch()
@@ -134,6 +126,8 @@ if (!feature(branch())) {
 node() {
   stage('Publish') {
     milestone label: 'deploy'
+    println("releases url: " + env.NEXUS_RELEASES_URL)
+    println("snapshot url: " + env.NEXUS_SNAPSHOT_URL)
     // https://www.cloudbees.com/blog/workflow-integration-credentials-binding-plugin
     // https://wiki.jenkins-ci.org/display/JENKINS/Credentials+Binding+Plugin
     withCredentials([
