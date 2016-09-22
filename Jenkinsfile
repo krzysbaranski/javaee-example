@@ -129,8 +129,9 @@ if (!feature(branch())) {
   timeout(time: 24, unit: 'HOURS') {
     input message: "Accept publishing artifact to nexus from branch: " + branch()
   }
-  milestone label: 'deploy'
+
   stage('Publish') {
+    milestone label: 'deploy'
     // https://www.cloudbees.com/blog/workflow-integration-credentials-binding-plugin
     // https://wiki.jenkins-ci.org/display/JENKINS/Credentials+Binding+Plugin
     withCredentials([
