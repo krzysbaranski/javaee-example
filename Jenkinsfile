@@ -165,6 +165,11 @@ node() {
 stage('Arquillian tests') {
   node() {
     def mvnHome = tool 'Maven 3.x'
+    // turn off color in wildfly logs
+    // sed -i -e 's/<named-formatter name="PATTERN"\/>/<named-formatter name="COLOR-PATTERN"\/>/g' target/wildfly-10.1.0.Final/standalone/configuration/standalone.xml
+    // sed -i -e 's/handler.CONSOLE.formatter=COLOR-PATTERN/handler.CONSOLE.formatter=PATTERN/g' target/wildfly-10.1.0.Final/standalone/configuration/logging.properties
+    // sed -i -e 's/formatters=COLOR-PATTERN//g' target/wildfly-10.1.0.Final/logging.properties
+
     lock(resource: 'port-8080', inversePrecedence: true) {
       withEnv(['JBOSS_HOME=target/wildfly-10.1.0.Final']) {
         sh "${mvnHome}/bin/mvn -B test -Parquillian-wildfly-managed"
