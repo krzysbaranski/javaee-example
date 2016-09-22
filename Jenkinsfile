@@ -170,7 +170,12 @@ stage('Arquillian tests') {
     // sed -i -e 's/handler.CONSOLE.formatter=COLOR-PATTERN/handler.CONSOLE.formatter=PATTERN/g' target/wildfly-10.1.0.Final/standalone/configuration/logging.properties
     // sed -i -e 's/formatters=COLOR-PATTERN//g' target/wildfly-10.1.0.Final/logging.properties
 
-    lock(resource: 'port-8080', inversePrecedence: true) {
+    // TODO random ports
+    // TODO run inside docker
+
+    // lock tcp port on current node
+    def resourceLockName = "${env.NODE_NAME}:tcp-port-8080"
+    lock(resource: resourceLockName, inversePrecedence: true) {
       withEnv(['JBOSS_HOME=target/wildfly-10.1.0.Final']) {
         sh "${mvnHome}/bin/mvn -B test -Parquillian-wildfly-managed"
       }
