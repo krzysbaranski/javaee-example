@@ -217,7 +217,7 @@ node() {
 node("docker") {
   stage('dockerfile') {
     unstash 'artifacts'
-    def dockername = dockerImageName() + ":${env.BUILD_TAG}"
+    def dockername = dockerImageName() + ":" + branch() + ".build-" + "${env.BUILD_ID}"
     def dockerfile = docker.build(dockername, '.')
 
     def container
