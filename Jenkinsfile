@@ -1,15 +1,17 @@
 #!/usr/bin/env groovy
 
+def branchName
+
 // check if branch name starts with "feature-"
 @NonCPS
-def feature(branchName) {
-   def matcher = (branchName =~ /feature-([a-z_]+)/)
-   if (matcher.matches()) {
-      assert matcher.matches()
-      //return matcher[0][1]
-      return true
-   }
-   return false
+def isFeatureBranch() {
+  def matcher = (branch() =~ /feature-([a-z_]+)/)
+  if (matcher.matches()) {
+    assert matcher.matches()
+    //return matcher[0][1]
+    return true
+  }
+  return false
 }
 
 @NonCPS
@@ -28,7 +30,18 @@ def version() {
 }
 
 def branch() {
-   return "${env.BRANCH_NAME}"
+   def boolean check = branchName?.trim()
+   if (check) {
+     // return from field
+     return branchName
+   }
+   // read from env (env is not set outside of node)
+   branchName = "${env.BRANCH_NAME}"
+   check = branchName?.trim()
+   if (!check) {
+     error ("invalid context for branch(), first use must be in node")
+   }
+   return branchName
 }
 
 // check if build is from master branch and app version is correctly set
@@ -114,19 +127,44 @@ node() {
   }
 }
 
+stage('Arquillian tests') {
+  node() {
+    def mvnHome = tool 'Maven 3.x'
+    // turn off color in wildfly logs
+    // jboss-cli /subsystem=logging/console-handler=CONSOLE:write-attribute(name=named-formatter, value=PATTERN)
+    // sed -i -e 's/<named-formatter name="PATTERN"\/>/<named-formatter name="COLOR-PATTERN"\/>/g' target/wildfly-10.1.0.Final/standalone/configuration/standalone.xml
+    // sed -i -e 's/handler.CONSOLE.formatter=COLOR-PATTERN/handler.CONSOLE.formatter=PATTERN/g' target/wildfly-10.1.0.Final/standalone/configuration/logging.properties
+    // sed -i -e 's/formatters=COLOR-PATTERN//g' target/wildfly-10.1.0.Final/logging.properties
+
+    // TODO random ports
+    // TODO run inside docker
+
+    // lock tcp port on current node
+    def resourceLockName = "${env.NODE_NAME}:tcp-port-8080"
+    lock(resource: resourceLockName, inversePrecedence: true) {
+      withEnv(['JBOSS_HOME=target/wildfly-10.1.0.Final']) {
+        sh "${mvnHome}/bin/mvn -B test -Parquillian-wildfly-managed"
+      }
+    }
+  }
+}
+
+// cancel previous builds after accepting newer build
+milestone label: 'milestone-to-accept', ordinal: 1
 // feature branches will skip this block
-if (!feature(branch())) {
-
-
+if (!isFeatureBranch()) {
   // don't wait forever
   timeout(time: 24, unit: 'HOURS') {
     input message: "Accept publishing artifact to nexus from branch: " + branch()
   }
+} else {
+  echo "auto accepted"
 }
+milestone label: 'milestone-accepted', ordinal: 2
 
 node() {
   stage('Publish') {
-    milestone label: 'deploy'
+    milestone label: 'milestone-deploy', ordinal: 3
     def mvnHome = tool 'Maven 3.x'
     println("releases url: " + env.NEXUS_RELEASES_URL)
     println("snapshot url: " + env.NEXUS_SNAPSHOT_URL)
@@ -161,27 +199,6 @@ node() {
 //   jboss.inside() {
 //      sh 'find /opt/jboss/wildfly/standalone/deployments'
 //   }
-
-stage('Arquillian tests') {
-  node() {
-    def mvnHome = tool 'Maven 3.x'
-    // turn off color in wildfly logs
-    // sed -i -e 's/<named-formatter name="PATTERN"\/>/<named-formatter name="COLOR-PATTERN"\/>/g' target/wildfly-10.1.0.Final/standalone/configuration/standalone.xml
-    // sed -i -e 's/handler.CONSOLE.formatter=COLOR-PATTERN/handler.CONSOLE.formatter=PATTERN/g' target/wildfly-10.1.0.Final/standalone/configuration/logging.properties
-    // sed -i -e 's/formatters=COLOR-PATTERN//g' target/wildfly-10.1.0.Final/logging.properties
-
-    // TODO random ports
-    // TODO run inside docker
-
-    // lock tcp port on current node
-    def resourceLockName = "${env.NODE_NAME}:tcp-port-8080"
-    lock(resource: resourceLockName, inversePrecedence: true) {
-      withEnv(['JBOSS_HOME=target/wildfly-10.1.0.Final']) {
-        sh "${mvnHome}/bin/mvn -B test -Parquillian-wildfly-managed"
-      }
-    }
-  }
-}
 
 node("docker") {
    stage('dockerfile') {
