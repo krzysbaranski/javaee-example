@@ -126,9 +126,6 @@ node() {
 
   stage('Package') {
     sh "${mvnHome}/bin/mvn -B -DskipTests=true package"
-    //step([$class: 'ArtifactArchiver', artifacts: '**/target/*.war', fingerprint: true])
-    step([$class: 'Fingerprinter', targets: '**/target/*.jar,**/target/*.war'])
-    stash includes: '**/target/*.jar,**/target/*.war', name: 'artifacts'
   }
 }
 
@@ -189,6 +186,9 @@ node() {
         " -Dlocal.nexus.mirror=\"" + env.NEXUS_MIRROR + "\""
       sh "eval ${deployCommand}"
     }
+    //step([$class: 'ArtifactArchiver', artifacts: '**/target/*.war', fingerprint: true])
+    step([$class: 'Fingerprinter', targets: '**/target/*.jar,**/target/*.war'])
+    stash includes: '**/target/*.jar,**/target/*.war', name: 'artifacts'
   }
 }
 
@@ -206,32 +206,33 @@ node() {
 //   }
 
 node("docker") {
-   stage('dockerfile') {
-   def dockername = "javaee-example:${env.BUILD_TAG}"
-   def dockerfile = docker.build(dockername, '.')
-   def container
-   try {
-     container = dockerfile.run()
-     echo "containerId ${container.id}"
-     //sh 'docker logs ${container.id}|grep "org.jboss.as.server.*Deployed.*war"'
-     echo 'logs'
-     containerid = container.id 
-     def dockerlogs = "docker logs " + containerid
-     sh "eval ${dockerlogs}"
-     //def cli = "docker tag " + dockername  + "localhost:5000/" + dockername
-     //sh "eval ${cli}"
-     //def push = "docker push " + "localhost:5000/" + dockername
-     //sh "eval ${push}"
-   } finally {
-     echo 'container stop'
-     // add http://jenkins/scriptApproval/
-     // method groovy.lang.GroovyObject getProperty java.lang.String
-     container.stop()
-     echo "docker rmi"
-     def dockerrmi = "docker rmi " + dockername
-     sh "eval ${dockerrmi}"
-   }
-   }
+  stage('dockerfile') {
+    unstash 'artifacts'
+    def dockername = "javaee-example:${env.BUILD_TAG}"
+    def dockerfile = docker.build(dockername, '.')
+    def container
+    try {
+      container = dockerfile.run()
+      echo "containerId ${container.id}"
+      //sh 'docker logs ${container.id}|grep "org.jboss.as.server.*Deployed.*war"'
+      echo 'logs'
+      containerid = container.id
+      def dockerlogs = "docker logs " + containerid
+      sh "eval ${dockerlogs}"
+      //def cli = "docker tag " + dockername  + "localhost:5000/" + dockername
+      //sh "eval ${cli}"
+      //def push = "docker push " + "localhost:5000/" + dockername
+      //sh "eval ${push}"
+    } finally {
+      echo 'container stop'
+      // add http://jenkins/scriptApproval/
+      // method groovy.lang.GroovyObject getProperty java.lang.String
+      container.stop()
+      echo "docker rmi"
+      def dockerrmi = "docker rmi " + dockername
+      sh "eval ${dockerrmi}"
+    }
+  }
 
 //   stage 'Deploy (publish artefact)'
 //   sh "${mv}/bin/mvn deploy"
