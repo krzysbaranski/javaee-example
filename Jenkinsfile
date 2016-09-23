@@ -134,7 +134,7 @@ node() {
   def mvnHome = tool 'Maven 3.x'
 
   stage('Package') {
-    sh "${mvnHome}/bin/mvn -B -DskipTests=true package"
+    sh "${mvnHome}/bin/mvn -B -DskipTests=true package -s settings.xml -Dlocal.nexus.mirror=\" + env.NEXUS_MIRROR + \""
   }
 }
 
@@ -184,16 +184,7 @@ node() {
     withCredentials([
       [$class: 'UsernamePasswordMultiBinding', credentialsId: 'nexus', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']
     ]) {
-      def deployCommand = "${mvnHome}/bin/mvn deploy --batch-mode -V -s settings.xml " +
-        " -DskipTests=true -Dmaven.javadoc.skip=true" +
-        " -Dlocal.nexus.snapshots.password=\"" + env.PASSWORD + "\"" +
-        " -Dlocal.nexus.snapshots.username=\"" + env.USERNAME + "\"" +
-        " -Dlocal.nexus.releases.password=\"" + env.PASSWORD + "\"" +
-        " -Dlocal.nexus.releases.username=\"" + env.USERNAME + "\"" +
-        " -Dlocal.nexus.releases.url=\"" + env.NEXUS_RELEASES_URL + "\"" +
-        " -Dlocal.nexus.snapshots.url=\"" + env.NEXUS_SNAPSHOT_URL + "\"" +
-        " -Dlocal.nexus.mirror=\"" + env.NEXUS_MIRROR + "\""
-      sh "eval ${deployCommand}"
+      sh "${mvnHome}/bin/mvn deploy --batch-mode -V -s settings.xml -DskipTests=true -Dmaven.javadoc.skip=true -Dlocal.nexus.snapshots.password=\"${env.PASSWORD}\" -Dlocal.nexus.snapshots.username=\"${env.USERNAME}\" -Dlocal.nexus.releases.password=\"${env.PASSWORD}\" -Dlocal.nexus.releases.username=\"${env.USERNAME}\" -Dlocal.nexus.releases.url=\"${env.NEXUS_RELEASES_URL}\" -Dlocal.nexus.snapshots.url=\"${env.NEXUS_SNAPSHOT_URL}\" -Dlocal.nexus.mirror=\"${env.NEXUS_MIRROR}\""
     }
     //step([$class: 'ArtifactArchiver', artifacts: '**/target/*.war', fingerprint: true])
     step([$class: 'Fingerprinter', targets: '**/target/*.jar,**/target/*.war'])
@@ -237,7 +228,7 @@ node("docker") {
       // skip for feature branch
 //      if (!isFeatureBranch()) {
         docker.withRegistry(env.DOCKER_REGISTRY_URL, 'docker-login') {
-          dockerfile.push("${env.BUILD_TAG}")
+          dockerfile.push()
           dockerfile.push(branch())
 //        }
       }
