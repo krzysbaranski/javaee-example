@@ -33,6 +33,10 @@ def finalName() {
   return pom.getBuild().getFinalName();
 }
 
+def dockerImageName() {
+  return finalName().toLowerCase()
+}
+
 def version() {
    return pomVersion('pom.xml')
 }
@@ -213,7 +217,7 @@ node() {
 node("docker") {
   stage('dockerfile') {
     unstash 'artifacts'
-    def dockername = finalName() + ":${env.BUILD_TAG}"
+    def dockername = dockerImageName() + ":${env.BUILD_TAG}"
     def dockerfile = docker.build(dockername, '.')
 
     def container
