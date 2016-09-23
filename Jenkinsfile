@@ -1,6 +1,6 @@
 #!/usr/bin/env groovy
 
-private String branchName
+def branchName = ''
 
 // check if branch name starts with "feature-"
 @NonCPS
@@ -28,6 +28,8 @@ def pomVersion(path) {
 def version() {
    return pomVersion('pom.xml')
 }
+
+
 
 def branch() {
    def boolean check = branchName?.trim()
