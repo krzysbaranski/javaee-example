@@ -30,7 +30,7 @@ def pomVersion(path) {
 
 def finalName() {
   def pom = readMavenPom file: 'pom.xml'
-  return pom.getFinalName();
+  return pom.getBuild().getFinalName();
 }
 
 def version() {
