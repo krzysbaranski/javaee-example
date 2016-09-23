@@ -1,6 +1,9 @@
 #!/usr/bin/env groovy
 
-def branchName = ''
+import groovy.transform.Field
+
+@Field
+String branchName = ""
 
 // check if branch name starts with "feature-"
 @NonCPS
