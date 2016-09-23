@@ -28,6 +28,11 @@ def pomVersion(path) {
    return pom.getVersion()
 }
 
+def finalName() {
+  def pom = readMavenPom file: 'pom.xml'
+  return pom.getFinalName();
+}
+
 def version() {
    return pomVersion('pom.xml')
 }
@@ -208,8 +213,9 @@ node() {
 node("docker") {
   stage('dockerfile') {
     unstash 'artifacts'
-    def dockername = "javaee-example:${env.BUILD_TAG}"
+    def dockername = finalName() + ":${env.BUILD_TAG}"
     def dockerfile = docker.build(dockername, '.')
+
     def container
     try {
       container = dockerfile.run()
@@ -223,6 +229,14 @@ node("docker") {
       //sh "eval ${cli}"
       //def push = "docker push " + "localhost:5000/" + dockername
       //sh "eval ${push}"
+
+      // skip for feature branch
+//      if (!isFeatureBranch()) {
+        docker.withRegistry(env.DOCKER_REGISTRY_URL, 'docker-login') {
+          dockerfile.push("${env.BUILD_TAG}")
+          dockerfile.push(branch())
+//        }
+      }
     } finally {
       echo 'container stop'
       // add http://jenkins/scriptApproval/
@@ -233,6 +247,7 @@ node("docker") {
       sh "eval ${dockerrmi}"
     }
   }
+}
 
 //   stage 'Deploy (publish artefact)'
 //   sh "${mv}/bin/mvn deploy"
@@ -250,7 +265,7 @@ node("docker") {
 //   sh "docker run -it --rm --link some-postgres:postgres postgres psql -h postgres -U postgres"
 //   stage 'docker app'
 //   sh "docker run --name some-app --link some-postgres:postgres -d application-that-uses-postgres"
-}
+
 
 
 //  try {
