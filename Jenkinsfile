@@ -1,6 +1,6 @@
 #!/usr/bin/env groovy
 
-def branchName
+private String branchName
 
 // check if branch name starts with "feature-"
 @NonCPS
