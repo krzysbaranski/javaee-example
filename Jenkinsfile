@@ -28,6 +28,11 @@ def pomVersion(path) {
    return pom.getVersion()
 }
 
+def pomPackaging(path) {
+  def pom = readMavenPom file: path
+  return pom.getPackaging();
+}
+
 def finalName() {
   def pom = readMavenPom file: 'pom.xml'
   return pom.getBuild().getFinalName();
@@ -125,9 +130,11 @@ node() {
        step([$class: 'JUnitResultArchiver', testResults: '**/target/surefire-reports/TEST-*.xml'])
      }
    }
+  stash includes: '**/*', name: 'all-files-compile-and-test'
 }
 
 node() {
+  unstash 'all-files-compile-and-test'
   // Get the maven tool.
   // ** NOTE: This 'M3' maven tool must be configured
   // **       in the global configuration.
@@ -136,10 +143,12 @@ node() {
   stage('Package') {
     sh "${mvnHome}/bin/mvn -B -DskipTests=true package -s settings.xml -Dlocal.nexus.mirror=\" + env.NEXUS_MIRROR + \""
   }
+  stash 'all-files-package'
 }
 
-stage('Arquillian tests') {
-  node() {
+node() {
+  stage('Arquillian tests') {
+    unstash 'all-files-package'
     def mvnHome = tool 'Maven 3.x'
     // turn off color in wildfly logs
     // jboss-cli /subsystem=logging/console-handler=CONSOLE:write-attribute(name=named-formatter, value=PATTERN)
@@ -157,6 +166,7 @@ stage('Arquillian tests') {
         sh "${mvnHome}/bin/mvn -B test -Parquillian-wildfly-managed"
       }
     }
+    stash 'all-files-arquillian'
   }
 }
 
@@ -169,22 +179,24 @@ if (!isFeatureBranch()) {
     input message: "Accept publishing artifact to nexus from branch: " + branch()
   }
 } else {
-  echo "auto accepted"
+  echo "Auto-accepted: publishing artifact to nexus from branch: " + branch()
 }
 milestone label: 'milestone-accepted', ordinal: 2
 
 node() {
   stage('Publish') {
+    unstash 'all-files-package'
     milestone label: 'milestone-deploy', ordinal: 3
     def mvnHome = tool 'Maven 3.x'
     println("releases url: " + env.NEXUS_RELEASES_URL)
     println("snapshot url: " + env.NEXUS_SNAPSHOT_URL)
+    def deployFormatTask = pomPackaging('pom.xml') + ":" + pomPackaging('pom.xml')
     // https://www.cloudbees.com/blog/workflow-integration-credentials-binding-plugin
     // https://wiki.jenkins-ci.org/display/JENKINS/Credentials+Binding+Plugin
     withCredentials([
       [$class: 'UsernamePasswordMultiBinding', credentialsId: 'nexus', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']
     ]) {
-      sh "${mvnHome}/bin/mvn deploy --batch-mode -V -s settings.xml -DskipTests=true -Dmaven.javadoc.skip=true -Dlocal.nexus.snapshots.password=\"${env.PASSWORD}\" -Dlocal.nexus.snapshots.username=\"${env.USERNAME}\" -Dlocal.nexus.releases.password=\"${env.PASSWORD}\" -Dlocal.nexus.releases.username=\"${env.USERNAME}\" -Dlocal.nexus.releases.url=\"${env.NEXUS_RELEASES_URL}\" -Dlocal.nexus.snapshots.url=\"${env.NEXUS_SNAPSHOT_URL}\" -Dlocal.nexus.mirror=\"${env.NEXUS_MIRROR}\""
+      sh "${mvnHome}/bin/mvn validate ${deployFormatTask} deploy:deploy --batch-mode -V -s settings.xml -DskipTests=true -Dmaven.javadoc.skip=true -Dlocal.nexus.snapshots.password=\"${env.PASSWORD}\" -Dlocal.nexus.snapshots.username=\"${env.USERNAME}\" -Dlocal.nexus.releases.password=\"${env.PASSWORD}\" -Dlocal.nexus.releases.username=\"${env.USERNAME}\" -Dlocal.nexus.releases.url=\"${env.NEXUS_RELEASES_URL}\" -Dlocal.nexus.snapshots.url=\"${env.NEXUS_SNAPSHOT_URL}\" -Dlocal.nexus.mirror=\"${env.NEXUS_MIRROR}\""
     }
     //step([$class: 'ArtifactArchiver', artifacts: '**/target/*.war', fingerprint: true])
     step([$class: 'Fingerprinter', targets: '**/target/*.jar,**/target/*.war'])
