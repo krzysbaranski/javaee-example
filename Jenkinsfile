@@ -49,8 +49,6 @@ def version() {
    return pomVersion('pom.xml')
 }
 
-
-
 def branch() {
    def boolean check = branchName?.trim()
    if (check) {
@@ -99,28 +97,28 @@ def findPom() {
 }
 
 node() {
-   def mvnHome = tool 'Maven 3.x'
+  def mvnHome = tool 'Maven 3.x'
 
-   // Mark the code checkout 'stage'....
-   stage('Checkout') {
-     // Checkout code from repository
-     checkout scm
-     echo 'branch is: ' + branch()
-   }
+  // Mark the code checkout 'stage'....
+  stage('Checkout') {
+    // Checkout code from repository
+    checkout scm
+    echo 'branch is: ' + branch()
+  }
 
-   // Mark the code build 'stage'....
-   stage('Build') {
-     releaseCheck()
-     findPom()
-     echo 'Building version ' + version()
+  // Mark the code build 'stage'....
+  stage('Build') {
+    releaseCheck()
+    findPom()
+    echo 'Building version ' + version()
 
-     // Run the maven build
+    // Run the maven build
     withCredentials([
       [$class: 'UsernamePasswordMultiBinding', credentialsId: 'nexus', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']
     ]) {
-       sh "${mvnHome}/bin/mvn --batch-mode --update-snapshots -DskipTests=true clean compile -s settings.xml -Dlocal.nexus.mirror=\"${env.NEXUS_MIRROR}\" -Dlocal.nexus.mirror.password=\"${env.PASSWORD}\" -Dlocal.nexus.mirror.username=\"${env.USERNAME}\""
-     }
-   }
+      sh "${mvnHome}/bin/mvn --batch-mode --update-snapshots -DskipTests=true clean compile -s settings.xml -Dlocal.nexus.mirror=\"${env.NEXUS_MIRROR}\" -Dlocal.nexus.mirror.password=\"${env.PASSWORD}\" -Dlocal.nexus.mirror.username=\"${env.USERNAME}\""
+    }
+  }
 
   stage('Tests') {
     withCredentials([
@@ -129,12 +127,7 @@ node() {
       sh "${mvnHome}/bin/mvn verify --batch-mode --update-snapshots -Dmaven.test.failure.ignore -s settings.xml -Dlocal.nexus.mirror=\"${env.NEXUS_MIRROR}\" -Dlocal.nexus.mirror.password=\"${env.PASSWORD}\" -Dlocal.nexus.mirror.username=\"${env.USERNAME}\""
     }
     junit '**/target/surefire-reports/*.xml,**/target/failsafe-reports/*.xml'
-    stash includes: '**/*', name: 'all-files-compile-and-test'
-  }
 
-node() {
-  unstash 'all-files-compile-and-test'
-   def mvnHome = tool 'Maven 3.x'
     stage('Package') {
       withCredentials([
         [$class: 'UsernamePasswordMultiBinding', credentialsId: 'nexus', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']
@@ -144,6 +137,7 @@ node() {
     }
     stash 'all-files-package'
   }
+}
 
 node() {
   stage('Arquillian tests') {
@@ -180,7 +174,7 @@ milestone label: 'milestone-to-accept', ordinal: 1
 // feature branches will skip this block
 if (!isFeatureBranch()) {
   // don't wait forever
-  timeout(time: 24, unit: 'HOURS') {
+  timeout(time: 72, unit: 'HOURS') {
     input message: "Accept publishing artifact to nexus from branch: " + branch()
   }
 } else {
