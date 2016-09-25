@@ -242,20 +242,20 @@ node('docker') {
       //sh "eval ${push}"
 
       // skip for feature branch
-//      if (!isFeatureBranch()) {
-        docker.withRegistry(env.DOCKER_REGISTRY_URL, 'docker-login') {
-          dockerfile.push()
-          dockerfile.push(branch())
-//        }
+//    if (!isFeatureBranch()) {
+      println(env.DOCKER_REGISTRY_URL)
+      docker.withRegistry(env.DOCKER_REGISTRY_URL, 'docker-login') {
+        dockerfile.push()
+        dockerfile.push(branch())
       }
+//    }
     } finally {
-      echo 'container stop'
       // add http://jenkins/scriptApproval/
       // method groovy.lang.GroovyObject getProperty java.lang.String
       container.stop()
-      echo "docker rmi"
-      def dockerrmi = "docker rmi " + dockername
-      sh "eval ${dockerrmi}"
+      //echo "docker rmi"
+      //def dockerrmi = "docker rmi " + dockername
+      //sh "eval ${dockerrmi}"
     }
   }
 }
