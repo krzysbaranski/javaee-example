@@ -21,6 +21,11 @@
       <username>${local.nexus.snapshots.username}</username>
       <password>${local.nexus.snapshots.password}</password>
     </server>
+    <server>
+      <id>nexus</id>
+      <username>${local.nexus.mirror.username}</username>
+      <password>${local.nexus.mirror.password}</password>
+    </server>
   </servers>
   <profiles>
     <profile>

@@ -116,13 +116,21 @@ node() {
      echo 'Building version ' + version()
 
      // Run the maven build
-     sh "${mvnHome}/bin/mvn -B -DskipTests=true clean compile"
+    withCredentials([
+      [$class: 'UsernamePasswordMultiBinding', credentialsId: 'nexus', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']
+    ]) {
+       sh "${mvnHome}/bin/mvn -B -DskipTests=true clean compile -s settings.xml -Dlocal.nexus.mirror=\"${env.NEXUS_MIRROR}\" -Dlocal.nexus.mirror.password=\"${env.PASSWORD}\" -Dlocal.nexus.mirror.username=\"${env.USERNAME}\""
+     }
    }
 
    stage('Tests') {
      try {
        // sh "${mvnHome}/bin/mvn -B -Dmaven.test.failure.ignore=true verify"
-       sh "${mvnHome}/bin/mvn -B verify"
+       withCredentials([
+         [$class: 'UsernamePasswordMultiBinding', credentialsId: 'nexus', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']
+       ]) {
+         sh "${mvnHome}/bin/mvn -B verify -s settings.xml -Dlocal.nexus.mirror=\"${env.NEXUS_MIRROR}\" -Dlocal.nexus.mirror.password=\"${env.PASSWORD}\" -Dlocal.nexus.mirror.username=\"${env.USERNAME}\""
+       }
      } catch (Exception e) {
        error 'test fail, please fix test and try again'
      } finally {
@@ -141,7 +149,11 @@ node() {
   def mvnHome = tool 'Maven 3.x'
 
   stage('Package') {
-    sh "${mvnHome}/bin/mvn -B -DskipTests=true package -s settings.xml -Dlocal.nexus.mirror=\" + env.NEXUS_MIRROR + \""
+    withCredentials([
+      [$class: 'UsernamePasswordMultiBinding', credentialsId: 'nexus', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']
+    ]) {
+      sh "${mvnHome}/bin/mvn -B -DskipTests=true package -s settings.xml -Dlocal.nexus.mirror=\"${env.NEXUS_MIRROR}\" -Dlocal.nexus.mirror.password=\"${env.PASSWORD}\" -Dlocal.nexus.mirror.username=\"${env.USERNAME}\""
+    }
   }
   stash 'all-files-package'
 }
@@ -163,7 +175,11 @@ node() {
     def resourceLockName = "${env.NODE_NAME}:tcp-port-8080"
     lock(resource: resourceLockName, inversePrecedence: true) {
       withEnv(['JBOSS_HOME=target/wildfly-10.1.0.Final']) {
-        sh "${mvnHome}/bin/mvn -B test -Parquillian-wildfly-managed"
+        withCredentials([
+          [$class: 'UsernamePasswordMultiBinding', credentialsId: 'nexus', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']
+        ]) {
+          sh "${mvnHome}/bin/mvn -B test -Parquillian-wildfly-managed -s settings.xml -Dlocal.nexus.mirror=\"${env.NEXUS_MIRROR}\" -Dlocal.nexus.mirror.password=\"${env.PASSWORD}\" -Dlocal.nexus.mirror.username=\"${env.USERNAME}\""
+        }
       }
     }
     stash 'all-files-arquillian'
@@ -196,7 +212,7 @@ node() {
     withCredentials([
       [$class: 'UsernamePasswordMultiBinding', credentialsId: 'nexus', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']
     ]) {
-      sh "${mvnHome}/bin/mvn validate ${deployFormatTask} deploy:deploy --batch-mode -V -s settings.xml -DskipTests=true -Dmaven.javadoc.skip=true -Dlocal.nexus.snapshots.password=\"${env.PASSWORD}\" -Dlocal.nexus.snapshots.username=\"${env.USERNAME}\" -Dlocal.nexus.releases.password=\"${env.PASSWORD}\" -Dlocal.nexus.releases.username=\"${env.USERNAME}\" -Dlocal.nexus.releases.url=\"${env.NEXUS_RELEASES_URL}\" -Dlocal.nexus.snapshots.url=\"${env.NEXUS_SNAPSHOT_URL}\" -Dlocal.nexus.mirror=\"${env.NEXUS_MIRROR}\""
+      sh "${mvnHome}/bin/mvn validate ${deployFormatTask} deploy:deploy --batch-mode -V -s settings.xml -DskipTests=true -Dmaven.javadoc.skip=true -Dlocal.nexus.snapshots.password=\"${env.PASSWORD}\" -Dlocal.nexus.snapshots.username=\"${env.USERNAME}\" -Dlocal.nexus.releases.password=\"${env.PASSWORD}\" -Dlocal.nexus.releases.username=\"${env.USERNAME}\" -Dlocal.nexus.releases.url=\"${env.NEXUS_RELEASES_URL}\" -Dlocal.nexus.snapshots.url=\"${env.NEXUS_SNAPSHOT_URL}\" -Dlocal.nexus.mirror=\"${env.NEXUS_MIRROR}\" -Dlocal.nexus.mirror.password=\"${env.PASSWORD}\" -Dlocal.nexus.mirror.username=\"${env.USERNAME}\""
     }
     //step([$class: 'ArtifactArchiver', artifacts: '**/target/*.war', fingerprint: true])
     step([$class: 'Fingerprinter', targets: '**/target/*.jar,**/target/*.war'])
@@ -207,7 +223,6 @@ node() {
 //   def maven = docker.image('maven:latest')
 //   maven.pull() // make sure we have the latest available from Docker Hub
 //   maven.inside {
-//       …as above
 //   }
 
 //   stage 'docker'
@@ -217,7 +232,7 @@ node() {
 //      sh 'find /opt/jboss/wildfly/standalone/deployments'
 //   }
 
-node("docker") {
+node('docker') {
   stage('dockerfile') {
     unstash 'artifacts'
     def dockername = dockerImageName() + ":" + branch() + ".build-" + "${env.BUILD_ID}"
