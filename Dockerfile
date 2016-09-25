@@ -1,4 +1,4 @@
-FROM jboss/wildfly:10.0.0.Final
+FROM jboss/wildfly:10.1.0.Final
 
 ADD https://jdbc.postgresql.org/download/postgresql-9.4.1211.jar /opt/jboss/wildfly/modules/system/layers/base/org/postgresql/main/postgresql.jar
 USER root
