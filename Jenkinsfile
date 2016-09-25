@@ -1,5 +1,8 @@
 #!/usr/bin/env groovy
 
+// jenkins configuration in the global configuration:
+// tool: 'Maven 3.x'
+
 import groovy.transform.Field
 
 @Field
@@ -96,10 +99,6 @@ def findPom() {
 }
 
 node() {
-   // Get the maven tool.
-   // ** NOTE: This 'M3' maven tool must be configured
-   // **       in the global configuration.
-   sh 'env'
    def mvnHome = tool 'Maven 3.x'
 
    // Mark the code checkout 'stage'....
@@ -119,44 +118,32 @@ node() {
     withCredentials([
       [$class: 'UsernamePasswordMultiBinding', credentialsId: 'nexus', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']
     ]) {
-       sh "${mvnHome}/bin/mvn -B -DskipTests=true clean compile -s settings.xml -Dlocal.nexus.mirror=\"${env.NEXUS_MIRROR}\" -Dlocal.nexus.mirror.password=\"${env.PASSWORD}\" -Dlocal.nexus.mirror.username=\"${env.USERNAME}\""
+       sh "${mvnHome}/bin/mvn --batch-mode --update-snapshots -DskipTests=true clean compile -s settings.xml -Dlocal.nexus.mirror=\"${env.NEXUS_MIRROR}\" -Dlocal.nexus.mirror.password=\"${env.PASSWORD}\" -Dlocal.nexus.mirror.username=\"${env.USERNAME}\""
      }
    }
 
-   stage('Tests') {
-     try {
-       // sh "${mvnHome}/bin/mvn -B -Dmaven.test.failure.ignore=true verify"
-       withCredentials([
-         [$class: 'UsernamePasswordMultiBinding', credentialsId: 'nexus', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']
-       ]) {
-         sh "${mvnHome}/bin/mvn -B verify -s settings.xml -Dlocal.nexus.mirror=\"${env.NEXUS_MIRROR}\" -Dlocal.nexus.mirror.password=\"${env.PASSWORD}\" -Dlocal.nexus.mirror.username=\"${env.USERNAME}\""
-       }
-     } catch (Exception e) {
-       error 'test fail, please fix test and try again'
-     } finally {
-       echo 'Archive test results'
-       step([$class: 'JUnitResultArchiver', testResults: '**/target/surefire-reports/TEST-*.xml'])
-     }
-   }
-  stash includes: '**/*', name: 'all-files-compile-and-test'
-}
-
-node() {
-  unstash 'all-files-compile-and-test'
-  // Get the maven tool.
-  // ** NOTE: This 'M3' maven tool must be configured
-  // **       in the global configuration.
-  def mvnHome = tool 'Maven 3.x'
-
-  stage('Package') {
+  stage('Tests') {
     withCredentials([
       [$class: 'UsernamePasswordMultiBinding', credentialsId: 'nexus', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']
     ]) {
-      sh "${mvnHome}/bin/mvn -B -DskipTests=true package -s settings.xml -Dlocal.nexus.mirror=\"${env.NEXUS_MIRROR}\" -Dlocal.nexus.mirror.password=\"${env.PASSWORD}\" -Dlocal.nexus.mirror.username=\"${env.USERNAME}\""
+      sh "${mvnHome}/bin/mvn verify --batch-mode --update-snapshots -Dmaven.test.failure.ignore -s settings.xml -Dlocal.nexus.mirror=\"${env.NEXUS_MIRROR}\" -Dlocal.nexus.mirror.password=\"${env.PASSWORD}\" -Dlocal.nexus.mirror.username=\"${env.USERNAME}\""
     }
+    junit '**/target/surefire-reports/*.xml,**/target/failsafe-reports/*.xml'
+    stash includes: '**/*', name: 'all-files-compile-and-test'
   }
-  stash 'all-files-package'
-}
+
+node() {
+  unstash 'all-files-compile-and-test'
+   def mvnHome = tool 'Maven 3.x'
+    stage('Package') {
+      withCredentials([
+        [$class: 'UsernamePasswordMultiBinding', credentialsId: 'nexus', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']
+      ]) {
+        sh "${mvnHome}/bin/mvn package --batch-mode -DskipTests=true  -s settings.xml -Dlocal.nexus.mirror=\"${env.NEXUS_MIRROR}\" -Dlocal.nexus.mirror.password=\"${env.PASSWORD}\" -Dlocal.nexus.mirror.username=\"${env.USERNAME}\""
+      }
+    }
+    stash 'all-files-package'
+  }
 
 node() {
   stage('Arquillian tests') {
@@ -178,8 +165,10 @@ node() {
         withCredentials([
           [$class: 'UsernamePasswordMultiBinding', credentialsId: 'nexus', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']
         ]) {
-          sh "${mvnHome}/bin/mvn -B test -Parquillian-wildfly-managed -s settings.xml -Dlocal.nexus.mirror=\"${env.NEXUS_MIRROR}\" -Dlocal.nexus.mirror.password=\"${env.PASSWORD}\" -Dlocal.nexus.mirror.username=\"${env.USERNAME}\""
+          sh "${mvnHome}/bin/mvn test -Parquillian-wildfly-managed -Dmaven.test.failure.ignore --batch-mode -s settings.xml -Dlocal.nexus.mirror=\"${env.NEXUS_MIRROR}\" -Dlocal.nexus.mirror.password=\"${env.PASSWORD}\" -Dlocal.nexus.mirror.username=\"${env.USERNAME}\""
         }
+        junit '**/target/surefire-reports/*.xml,**/target/failsafe-reports/*.xml'
+
       }
     }
     stash 'all-files-arquillian'
@@ -204,15 +193,21 @@ node() {
     unstash 'all-files-package'
     milestone label: 'milestone-deploy', ordinal: 3
     def mvnHome = tool 'Maven 3.x'
+    def packaging = pomPackaging('pom.xml')
+    def deployFormatTask = ""
+    // mvn require classes folder for some reason
+    sh 'mkdir -p target/classes'
+    if (packaging != 'pom') {
+      deployFormatTask = packaging + ":" + packaging
+    }
     println("releases url: " + env.NEXUS_RELEASES_URL)
     println("snapshot url: " + env.NEXUS_SNAPSHOT_URL)
-    def deployFormatTask = pomPackaging('pom.xml') + ":" + pomPackaging('pom.xml')
     // https://www.cloudbees.com/blog/workflow-integration-credentials-binding-plugin
     // https://wiki.jenkins-ci.org/display/JENKINS/Credentials+Binding+Plugin
     withCredentials([
       [$class: 'UsernamePasswordMultiBinding', credentialsId: 'nexus', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']
     ]) {
-      sh "${mvnHome}/bin/mvn validate ${deployFormatTask} deploy:deploy --batch-mode -V -s settings.xml -DskipTests=true -Dmaven.javadoc.skip=true -Dlocal.nexus.snapshots.password=\"${env.PASSWORD}\" -Dlocal.nexus.snapshots.username=\"${env.USERNAME}\" -Dlocal.nexus.releases.password=\"${env.PASSWORD}\" -Dlocal.nexus.releases.username=\"${env.USERNAME}\" -Dlocal.nexus.releases.url=\"${env.NEXUS_RELEASES_URL}\" -Dlocal.nexus.snapshots.url=\"${env.NEXUS_SNAPSHOT_URL}\" -Dlocal.nexus.mirror=\"${env.NEXUS_MIRROR}\" -Dlocal.nexus.mirror.password=\"${env.PASSWORD}\" -Dlocal.nexus.mirror.username=\"${env.USERNAME}\""
+      sh "${mvnHome}/bin/mvn ${deployFormatTask} deploy:deploy --batch-mode -V -s settings.xml -DskipTests=true -Dmaven.javadoc.skip=true -Dlocal.nexus.snapshots.password=\"${env.PASSWORD}\" -Dlocal.nexus.snapshots.username=\"${env.USERNAME}\" -Dlocal.nexus.releases.password=\"${env.PASSWORD}\" -Dlocal.nexus.releases.username=\"${env.USERNAME}\" -Dlocal.nexus.releases.url=\"${env.NEXUS_RELEASES_URL}\" -Dlocal.nexus.snapshots.url=\"${env.NEXUS_SNAPSHOT_URL}\" -Dlocal.nexus.mirror=\"${env.NEXUS_MIRROR}\" -Dlocal.nexus.mirror.password=\"${env.PASSWORD}\" -Dlocal.nexus.mirror.username=\"${env.USERNAME}\""
     }
     //step([$class: 'ArtifactArchiver', artifacts: '**/target/*.war', fingerprint: true])
     step([$class: 'Fingerprinter', targets: '**/target/*.jar,**/target/*.war'])
@@ -271,9 +266,6 @@ node('docker') {
   }
 }
 
-//   stage 'Deploy (publish artefact)'
-//   sh "${mv}/bin/mvn deploy"
-//
 //   stage 'Server deploy'
 //   sh "/opt/wildfly-10.0.0.Final/bin/jboss-cli.sh --controller=\"localhost:9990\" -c command=\"deploy target/AwesomeApp.war --force\""
 //
