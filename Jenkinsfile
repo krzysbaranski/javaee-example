@@ -120,6 +120,15 @@ node() {
     }
   }
 
+  stage('Package') {
+    withCredentials([
+      [$class: 'UsernamePasswordMultiBinding', credentialsId: 'nexus', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']
+    ]) {
+      sh "${mvnHome}/bin/mvn package --batch-mode -DskipTests=true  -s settings.xml -Dlocal.nexus.mirror=\"${env.NEXUS_MIRROR}\" -Dlocal.nexus.mirror.password=\"${env.PASSWORD}\" -Dlocal.nexus.mirror.username=\"${env.USERNAME}\""
+    }
+  }
+  stash 'all-files-package'
+
   stage('Tests') {
     withCredentials([
       [$class: 'UsernamePasswordMultiBinding', credentialsId: 'nexus', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']
@@ -127,15 +136,6 @@ node() {
       sh "${mvnHome}/bin/mvn verify --batch-mode --update-snapshots -Dmaven.test.failure.ignore -s settings.xml -Dlocal.nexus.mirror=\"${env.NEXUS_MIRROR}\" -Dlocal.nexus.mirror.password=\"${env.PASSWORD}\" -Dlocal.nexus.mirror.username=\"${env.USERNAME}\""
     }
     junit '**/target/surefire-reports/*.xml,**/target/failsafe-reports/*.xml'
-
-    stage('Package') {
-      withCredentials([
-        [$class: 'UsernamePasswordMultiBinding', credentialsId: 'nexus', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']
-      ]) {
-        sh "${mvnHome}/bin/mvn package --batch-mode -DskipTests=true  -s settings.xml -Dlocal.nexus.mirror=\"${env.NEXUS_MIRROR}\" -Dlocal.nexus.mirror.password=\"${env.PASSWORD}\" -Dlocal.nexus.mirror.username=\"${env.USERNAME}\""
-      }
-    }
-    stash 'all-files-package'
   }
 }
 
@@ -154,15 +154,15 @@ node() {
 
     // lock tcp port on current node
     def resourceLockName = "${env.NODE_NAME}:tcp-port-8080"
-     lock(resource: resourceLockName, inversePrecedence: true) {
-	withEnv(['JBOSS_HOME=target/wildfly-10.1.0.Final']) {
+    lock(resource: resourceLockName, inversePrecedence: true) {
+      withEnv(['JBOSS_HOME=target/wildfly-10.1.0.Final']) {
         withCredentials([
           [$class: 'UsernamePasswordMultiBinding', credentialsId: 'nexus', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']
         ]) {
-       	  wrap([$class: 'AnsiColorBuildWrapper', 'colorMapName': 'XTerm']) {
-          sh "${mvnHome}/bin/mvn test -Parquillian-wildfly-managed -Dmaven.test.failure.ignore --batch-mode -s settings.xml -Dlocal.nexus.mirror=\"${env.NEXUS_MIRROR}\" -Dlocal.nexus.mirror.password=\"${env.PASSWORD}\" -Dlocal.nexus.mirror.username=\"${env.USERNAME}\""
+          wrap([$class: 'AnsiColorBuildWrapper', 'colorMapName': 'XTerm']) {
+            sh "${mvnHome}/bin/mvn test -Parquillian-wildfly-managed -Dmaven.test.failure.ignore --batch-mode -s settings.xml -Dlocal.nexus.mirror=\"${env.NEXUS_MIRROR}\" -Dlocal.nexus.mirror.password=\"${env.PASSWORD}\" -Dlocal.nexus.mirror.username=\"${env.USERNAME}\""
           }
-	}
+        }
         junit '**/target/surefire-reports/*.xml,**/target/failsafe-reports/*.xml'
       }
     }
