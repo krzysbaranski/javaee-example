@@ -154,15 +154,16 @@ node() {
 
     // lock tcp port on current node
     def resourceLockName = "${env.NODE_NAME}:tcp-port-8080"
-    lock(resource: resourceLockName, inversePrecedence: true) {
-      withEnv(['JBOSS_HOME=target/wildfly-10.1.0.Final']) {
+     lock(resource: resourceLockName, inversePrecedence: true) {
+	withEnv(['JBOSS_HOME=target/wildfly-10.1.0.Final']) {
         withCredentials([
           [$class: 'UsernamePasswordMultiBinding', credentialsId: 'nexus', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']
         ]) {
+       	  wrap([$class: 'AnsiColorBuildWrapper', 'colorMapName': 'XTerm']) {
           sh "${mvnHome}/bin/mvn test -Parquillian-wildfly-managed -Dmaven.test.failure.ignore --batch-mode -s settings.xml -Dlocal.nexus.mirror=\"${env.NEXUS_MIRROR}\" -Dlocal.nexus.mirror.password=\"${env.PASSWORD}\" -Dlocal.nexus.mirror.username=\"${env.USERNAME}\""
-        }
+          }
+	}
         junit '**/target/surefire-reports/*.xml,**/target/failsafe-reports/*.xml'
-
       }
     }
     stash 'all-files-arquillian'
