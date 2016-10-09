@@ -2,6 +2,7 @@
 
 // jenkins configuration in the global configuration:
 // tool: 'Maven 3.x'
+// credentials: nexus, sonarqube
 
 import groovy.transform.Field
 
@@ -171,6 +172,22 @@ node() {
       }
     }
     stash 'all-files-arquillian'
+  }
+}
+
+node() {
+  stage('Sonar') {
+    def mvnHome = tool 'Maven 3.x'
+    unstash 'all-files-package'
+    withCredentials([
+      [$class: 'UsernamePasswordMultiBinding', credentialsId: 'nexus', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']
+    ]) {
+      withCredentials([
+        [$class: 'UsernamePasswordMultiBinding', credentialsId: 'sonarqube', usernameVariable: 'SONAR_USERNAME', passwordVariable: 'SONAR_PASSWORD']
+      ]) {
+        sh "${mvnHome}/bin/mvn sonar:sonar --batch-mode -Dmaven.test.failure.ignore -s settings.xml -Dlocal.nexus.mirror=\"${env.NEXUS_MIRROR}\" -Dlocal.sonar.url=\"${env.SONAR_URL}\" -Dlocal.nexus.mirror.username=\"${env.USERNAME}\" -Dlocal.nexus.mirror.password=\"${env.PASSWORD}\" -Dsonar.branch=" + branch() + " -Dsonar.login=\"${env.SONAR_USERNAME}\" -Dsonar.password=\"${env.SONAR_PASSWORD}\""
+      }
+    }
   }
 }
 
