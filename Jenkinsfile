@@ -128,8 +128,12 @@ node() {
     }
   }
   stash 'all-files-package'
+}
 
+node() {
   stage('Tests') {
+    def mvnHome = tool 'Maven 3.x'
+    unstash 'all-files-package'
     withCredentials([
       [$class: 'UsernamePasswordMultiBinding', credentialsId: 'nexus', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']
     ]) {
