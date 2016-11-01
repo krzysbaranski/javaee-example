@@ -9,17 +9,16 @@ import groovy.transform.Field
 @Field
 String branchName = ""
 
-// check if branch name starts with "feature-"
-@NonCPS
-def isFeatureBranch() {
-  def matcher = (branch() =~ /feature-([a-z_]+)/)
-  if (matcher.matches()) {
-    assert matcher.matches()
-    //return matcher[0][1]
+def boolean allowPublish() {
+  if (branch().toLowerCase().startsWith('feature')) {
+    return false
+  }
+  if (branch() == 'develop' || branch() == 'master') {
     return true
   }
   return false
 }
+
 
 @NonCPS
 def versionMatcher() {
@@ -193,41 +192,47 @@ node() {
 
 // cancel previous builds after accepting newer build
 milestone label: 'milestone-to-accept', ordinal: 1
-// feature branches will skip this block
-if (!isFeatureBranch()) {
-  // don't wait forever
-  timeout(time: 72, unit: 'HOURS') {
-    input message: "Accept publishing artifact to nexus from branch: " + branch()
+
+if (allowPublish()) {
+  stage('Approve') {
+    if (branch() == 'master') {
+      // don't wait forever
+      timeout(time: 72, unit: 'HOURS') {
+        input message: "Accept publishing artifact to nexus from branch: " + branch()
+      }
+    } else {
+      echo "Auto-accepted: publishing artifact to nexus from branch: " + branch()
+    }
+    milestone label: 'milestone-accepted', ordinal: 2
   }
-} else {
-  echo "Auto-accepted: publishing artifact to nexus from branch: " + branch()
 }
-milestone label: 'milestone-accepted', ordinal: 2
 
 node() {
-  stage('Publish') {
-    unstash 'all-files-package'
-    milestone label: 'milestone-deploy', ordinal: 3
-    def mvnHome = tool 'Maven 3.x'
-    def packaging = pomPackaging('pom.xml')
-    def deployFormatTask = ""
-    // mvn require classes folder for some reason
-    sh 'mkdir -p target/classes'
-    if (packaging != 'pom') {
-      deployFormatTask = packaging + ":" + packaging
+  if (allowPublish()) {
+    stage('Publish') {
+      unstash 'all-files-package'
+      milestone label: 'milestone-deploy', ordinal: 3
+      def mvnHome = tool 'Maven 3.x'
+      def packaging = pomPackaging('pom.xml')
+      def deployFormatTask = ""
+      // mvn require classes folder for some reason
+      sh 'mkdir -p target/classes'
+      if (packaging != 'pom') {
+        deployFormatTask = packaging + ":" + packaging
+      }
+      println("releases url: " + env.NEXUS_RELEASES_URL)
+      println("snapshot url: " + env.NEXUS_SNAPSHOT_URL)
+      // https://www.cloudbees.com/blog/workflow-integration-credentials-binding-plugin
+      // https://wiki.jenkins-ci.org/display/JENKINS/Credentials+Binding+Plugin
+      withCredentials([
+        [$class: 'UsernamePasswordMultiBinding', credentialsId: 'nexus', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']
+      ]) {
+        sh "${mvnHome}/bin/mvn ${deployFormatTask} deploy:deploy --batch-mode -V -s settings.xml -DskipTests=true -Dmaven.javadoc.skip=true -Dlocal.nexus.snapshots.password=\"${env.PASSWORD}\" -Dlocal.nexus.snapshots.username=\"${env.USERNAME}\" -Dlocal.nexus.releases.password=\"${env.PASSWORD}\" -Dlocal.nexus.releases.username=\"${env.USERNAME}\" -Dlocal.nexus.releases.url=\"${env.NEXUS_RELEASES_URL}\" -Dlocal.nexus.snapshots.url=\"${env.NEXUS_SNAPSHOT_URL}\" -Dlocal.nexus.mirror=\"${env.NEXUS_MIRROR}\" -Dlocal.nexus.mirror.password=\"${env.PASSWORD}\" -Dlocal.nexus.mirror.username=\"${env.USERNAME}\""
+      }
+      //step([$class: 'ArtifactArchiver', artifacts: '**/target/*.war', fingerprint: true])
+      step([$class: 'Fingerprinter', targets: '**/target/*.jar,**/target/*.war'])
+      stash includes: '**/target/*.jar,**/target/*.war', name: 'artifacts'
     }
-    println("releases url: " + env.NEXUS_RELEASES_URL)
-    println("snapshot url: " + env.NEXUS_SNAPSHOT_URL)
-    // https://www.cloudbees.com/blog/workflow-integration-credentials-binding-plugin
-    // https://wiki.jenkins-ci.org/display/JENKINS/Credentials+Binding+Plugin
-    withCredentials([
-      [$class: 'UsernamePasswordMultiBinding', credentialsId: 'nexus', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']
-    ]) {
-      sh "${mvnHome}/bin/mvn ${deployFormatTask} deploy:deploy --batch-mode -V -s settings.xml -DskipTests=true -Dmaven.javadoc.skip=true -Dlocal.nexus.snapshots.password=\"${env.PASSWORD}\" -Dlocal.nexus.snapshots.username=\"${env.USERNAME}\" -Dlocal.nexus.releases.password=\"${env.PASSWORD}\" -Dlocal.nexus.releases.username=\"${env.USERNAME}\" -Dlocal.nexus.releases.url=\"${env.NEXUS_RELEASES_URL}\" -Dlocal.nexus.snapshots.url=\"${env.NEXUS_SNAPSHOT_URL}\" -Dlocal.nexus.mirror=\"${env.NEXUS_MIRROR}\" -Dlocal.nexus.mirror.password=\"${env.PASSWORD}\" -Dlocal.nexus.mirror.username=\"${env.USERNAME}\""
-    }
-    //step([$class: 'ArtifactArchiver', artifacts: '**/target/*.war', fingerprint: true])
-    step([$class: 'Fingerprinter', targets: '**/target/*.jar,**/target/*.war'])
-    stash includes: '**/target/*.jar,**/target/*.war', name: 'artifacts'
   }
 }
 
@@ -244,40 +249,39 @@ node() {
 //   }
 
 node('docker') {
-  stage('dockerfile') {
-    unstash 'artifacts'
-    def dockername = dockerImageName() + ":" + branch() + ".build-" + "${env.BUILD_ID}"
-    def dockerfile = docker.build(dockername, '.')
+  if (allowPublish()) {
+    stage('dockerfile') {
+      unstash 'artifacts'
+      def dockername = dockerImageName() + ":" + branch() + ".build-" + "${env.BUILD_ID}"
+      def dockerfile = docker.build(dockername, '.')
 
-    def container
-    try {
-      container = dockerfile.run()
-      echo "containerId ${container.id}"
-      //sh 'docker logs ${container.id}|grep "org.jboss.as.server.*Deployed.*war"'
-      echo 'logs'
-      containerid = container.id
-      def dockerlogs = "docker logs " + containerid
-      sh "eval ${dockerlogs}"
-      //def cli = "docker tag " + dockername  + "localhost:5000/" + dockername
-      //sh "eval ${cli}"
-      //def push = "docker push " + "localhost:5000/" + dockername
-      //sh "eval ${push}"
+      def container
+      try {
+        container = dockerfile.run()
+        echo "containerId ${container.id}"
+        //sh 'docker logs ${container.id}|grep "org.jboss.as.server.*Deployed.*war"'
+        echo 'logs'
+        containerid = container.id
+        def dockerlogs = "docker logs " + containerid
+        sh "eval ${dockerlogs}"
+        //def cli = "docker tag " + dockername  + "localhost:5000/" + dockername
+        //sh "eval ${cli}"
+        //def push = "docker push " + "localhost:5000/" + dockername
+        //sh "eval ${push}"
 
-      // skip for feature branch
-//    if (!isFeatureBranch()) {
-      println(env.DOCKER_REGISTRY_URL)
-      docker.withRegistry(env.DOCKER_REGISTRY_URL, 'docker-login') {
-        dockerfile.push()
-        dockerfile.push(branch())
+        println(env.DOCKER_REGISTRY_URL)
+        docker.withRegistry(env.DOCKER_REGISTRY_URL, 'docker-login') {
+          dockerfile.push()
+          dockerfile.push(branch())
+        }
+      } finally {
+        // add http://jenkins/scriptApproval/
+        // method groovy.lang.GroovyObject getProperty java.lang.String
+        container.stop()
+        //echo "docker rmi"
+        //def dockerrmi = "docker rmi " + dockername
+        //sh "eval ${dockerrmi}"
       }
-//    }
-    } finally {
-      // add http://jenkins/scriptApproval/
-      // method groovy.lang.GroovyObject getProperty java.lang.String
-      container.stop()
-      //echo "docker rmi"
-      //def dockerrmi = "docker rmi " + dockername
-      //sh "eval ${dockerrmi}"
     }
   }
 }
